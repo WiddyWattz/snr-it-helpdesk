@@ -1,0 +1,14 @@
+# Build output
+out/
+bin/
+*.class
+
+# Local secrets (Supabase URL and key) - never commit
+config.properties
+.env
+
+# IDE / OS
+.idea/
+*.iml
+.DS_Store
+Thumbs.db

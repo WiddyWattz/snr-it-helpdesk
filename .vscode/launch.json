@@ -1,0 +1,11 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Run SnR IT Helpdesk",
+            "request": "launch",
+            "mainClass": "com.snr.helpdesk.Main"
+        }
+    ]
+}
