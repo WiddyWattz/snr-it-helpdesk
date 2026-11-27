@@ -21,8 +21,6 @@ Java Swing desktop app. CSIT228 · Group SnR · G01
 - **Technician** – Assigned Tickets.
 - **IT Admin** – Dashboard (counts + overdue tickets), All Tickets, Devices.
 
-Buttons marked "Coming soon" are not connected yet; the services behind them already exist.
-
 ## Structure
 ```
 src/snr/

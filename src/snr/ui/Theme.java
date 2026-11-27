@@ -50,8 +50,4 @@ public final class Theme {
         return page;
     }
 
-    public static void comingSoon(Component parent, String feature) {
-        JOptionPane.showMessageDialog(parent, feature + " is not built yet.", "Coming soon",
-                JOptionPane.INFORMATION_MESSAGE);
-    }
 }

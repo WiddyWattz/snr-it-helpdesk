@@ -50,10 +50,10 @@ public class DataStore {
     private void addUser(User user) { users.put(user.getUsername(), user); }
 
     private void seedDevices() {
-        saveDevice(new Device("PC-12", DeviceType.PC, "Lab 3", "Working"));
-        saveDevice(new Device("PC-07", DeviceType.PC, "Lab 3", "Needs repair"));
-        saveDevice(new Device("PRN-01", DeviceType.PRINTER, "Faculty Room", "Working"));
-        saveDevice(new Device("RTR-02", DeviceType.ROUTER, "2nd Floor", "Working"));
+        saveDevice(new Device("PC-12", DeviceType.PC, "Lab 3", Device.WORKING));
+        saveDevice(new Device("PC-07", DeviceType.PC, "Lab 3", Device.NEEDS_REPAIR));
+        saveDevice(new Device("PRN-01", DeviceType.PRINTER, "Faculty Room", Device.WORKING));
+        saveDevice(new Device("RTR-02", DeviceType.ROUTER, "2nd Floor", Device.WORKING));
     }
 
     private void seedTickets() {

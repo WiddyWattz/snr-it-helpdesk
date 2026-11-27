@@ -1,9 +1,13 @@
 package snr.model;
 
 public class Device {
+    public static final String WORKING = "Working";
+    public static final String NEEDS_REPAIR = "Needs repair";
+    public static final String RETIRED = "Retired";
+
     private final String code;
     private final DeviceType type;
-    private final String location;
+    private String location;
     private String condition;
 
     public Device(String code, DeviceType type, String location, String condition) {
@@ -16,8 +20,10 @@ public class Device {
     public String getCode() { return code; }
     public DeviceType getType() { return type; }
     public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
     public String getCondition() { return condition; }
     public void setCondition(String condition) { this.condition = condition; }
+    public boolean isRetired() { return RETIRED.equals(condition); }
 
     @Override
     public String toString() { return location + " - " + code; }

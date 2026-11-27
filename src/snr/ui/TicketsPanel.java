@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 public class TicketsPanel extends JPanel {
-    public enum Mode { REPORTER, TECHNICIAN, ADMIN }
+    public enum Mode { VIEW, TECHNICIAN, ADMIN }
 
     private static final String[] COLUMNS =
             {"ID", "Category", "Device", "Description", "Priority", "Status", "Assigned to", "Due"};
@@ -71,7 +71,7 @@ public class TicketsPanel extends JPanel {
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 12));
         actions.setOpaque(false);
         switch (mode) {
-            case REPORTER -> addAction(actions, "View Details", this::showDetails);
+            case VIEW -> addAction(actions, "View Details", this::showDetails);
             case TECHNICIAN -> {
                 addAction(actions, "Update Status", this::updateStatus);
                 addAction(actions, "Add Repair Note", this::addRepairNote);
@@ -161,10 +161,7 @@ public class TicketsPanel extends JPanel {
 
     private void addAction(JPanel actions, String label, Runnable action) {
         JButton button = Theme.primaryButton(label);
-        button.addActionListener(e -> {
-            if (action == null) Theme.comingSoon(this, label);
-            else action.run();
-        });
+        button.addActionListener(e -> action.run());
         actions.add(button);
         actions.add(Box.createHorizontalStrut(8));
     }

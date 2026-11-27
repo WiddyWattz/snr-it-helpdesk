@@ -19,7 +19,7 @@ public class SubmitTicketPanel extends JPanel {
         super(new BorderLayout());
         this.app = app;
         this.reporter = reporter;
-        deviceBox = new JComboBox<>(app.devices().getAllDevices().toArray(new Device[0]));
+        deviceBox = new JComboBox<>(app.devices().getActiveDevices().toArray(new Device[0]));
         clearForm();
         descriptionArea.setLineWrap(true);
         descriptionArea.setWrapStyleWord(true);
