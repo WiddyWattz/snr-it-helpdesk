@@ -20,7 +20,7 @@ public class MainFrame extends JFrame {
         super("SnR IT Helpdesk - " + user.getRole());
         this.app = app;
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(1100, 680);
+        setSize(1240, 700);
         setMinimumSize(new Dimension(900, 560));
         setLocationRelativeTo(null);
 

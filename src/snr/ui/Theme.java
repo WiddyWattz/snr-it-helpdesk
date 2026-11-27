@@ -49,5 +49,4 @@ public final class Theme {
         page.add(content, BorderLayout.CENTER);
         return page;
     }
-
 }
