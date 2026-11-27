@@ -1,6 +1,10 @@
 package snr.ui;
 
+import snr.model.HelpdeskException;
+import snr.model.Status;
+import snr.model.Technician;
 import snr.model.Ticket;
+import snr.model.User;
 import snr.util.Dates;
 
 import javax.swing.*;
@@ -20,14 +24,16 @@ public class TicketsPanel extends JPanel {
             {"ID", "Category", "Device", "Description", "Priority", "Status", "Assigned to", "Due"};
 
     private final AppContext app;
+    private final User user;
     private final Supplier<List<Ticket>> source;
     private final DefaultTableModel model;
     private final JTable table;
     private List<Ticket> tickets = new ArrayList<>();
 
-    public TicketsPanel(AppContext app, String title, Supplier<List<Ticket>> source, Mode mode) {
+    public TicketsPanel(AppContext app, User user, String title, Supplier<List<Ticket>> source, Mode mode) {
         super(new BorderLayout());
         this.app = app;
+        this.user = user;
         this.source = source;
 
         model = new DefaultTableModel(COLUMNS, 0) {
@@ -67,8 +73,9 @@ public class TicketsPanel extends JPanel {
         switch (mode) {
             case REPORTER -> addAction(actions, "View Details", this::showDetails);
             case TECHNICIAN -> {
-                addAction(actions, "Update Status", null);
-                addAction(actions, "Add Repair Note", null);
+                addAction(actions, "Update Status", this::updateStatus);
+                addAction(actions, "Add Repair Note", this::addRepairNote);
+                addAction(actions, "View Details", this::showDetails);
             }
             case ADMIN -> {
                 addAction(actions, "Assign Technician", this::assignTechnician);
@@ -117,6 +124,39 @@ public class TicketsPanel extends JPanel {
         AssignDialog dialog = new AssignDialog(SwingUtilities.getWindowAncestor(this), app, ticket);
         dialog.setVisible(true);
         if (dialog.isAssigned()) refresh();
+    }
+
+    private void updateStatus() {
+        Ticket ticket = getSelectedTicket();
+        if (ticket == null) return;
+        Status next = (Status) JOptionPane.showInputDialog(this,
+                "Ticket #" + ticket.getId() + " is " + ticket.getStatus() + ".\nChange status to:",
+                "Update Status", JOptionPane.PLAIN_MESSAGE, null, Status.values(), ticket.getStatus());
+        if (next == null || next == ticket.getStatus()) return;
+        try {
+            app.tickets().changeStatus(ticket, (Technician) user, next);
+            refresh();
+            JOptionPane.showMessageDialog(this, "Ticket #" + ticket.getId() + " is now " + next + ".");
+        } catch (HelpdeskException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot update status", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    private void addRepairNote() {
+        Ticket ticket = getSelectedTicket();
+        if (ticket == null) return;
+        JTextArea area = new JTextArea(5, 30);
+        area.setLineWrap(true);
+        area.setWrapStyleWord(true);
+        int choice = JOptionPane.showConfirmDialog(this, new JScrollPane(area),
+                "Repair note for Ticket #" + ticket.getId(), JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (choice != JOptionPane.OK_OPTION) return;
+        try {
+            app.tickets().addNote(ticket, (Technician) user, area.getText());
+            JOptionPane.showMessageDialog(this, "Repair note added.");
+        } catch (HelpdeskException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot add note", JOptionPane.WARNING_MESSAGE);
+        }
     }
 
     private void addAction(JPanel actions, String label, Runnable action) {

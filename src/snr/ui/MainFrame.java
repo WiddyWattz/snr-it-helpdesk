@@ -42,17 +42,17 @@ public class MainFrame extends JFrame {
 
         if (user instanceof Reporter) {
             addNav(sidebar, "Submit Ticket", () -> new SubmitTicketPanel(app, (Reporter) user));
-            addNav(sidebar, "My Tickets", () -> new TicketsPanel(app, "My Tickets",
+            addNav(sidebar, "My Tickets", () -> new TicketsPanel(app, user, "My Tickets",
                     () -> app.tickets().getTicketsFor(user), TicketsPanel.Mode.REPORTER));
         } else if (user instanceof ITAdmin) {
-            addNav(sidebar, "Dashboard", () -> new DashboardPanel(app));
-            addNav(sidebar, "Unassigned", () -> new TicketsPanel(app, "Unassigned Tickets",
+            addNav(sidebar, "Dashboard", () -> new DashboardPanel(app, user));
+            addNav(sidebar, "Unassigned", () -> new TicketsPanel(app, user, "Unassigned Tickets",
                     () -> app.tickets().getUnassigned(), TicketsPanel.Mode.ADMIN));
-            addNav(sidebar, "All Tickets", () -> new TicketsPanel(app, "All Tickets",
+            addNav(sidebar, "All Tickets", () -> new TicketsPanel(app, user, "All Tickets",
                     () -> app.tickets().getTicketsFor(user), TicketsPanel.Mode.ADMIN));
             addNav(sidebar, "Devices", () -> new DevicesPanel(app));
         } else {
-            addNav(sidebar, "Assigned Tickets", () -> new TicketsPanel(app, "Assigned Tickets",
+            addNav(sidebar, "Assigned Tickets", () -> new TicketsPanel(app, user, "Assigned Tickets",
                     () -> app.tickets().getTicketsFor(user), TicketsPanel.Mode.TECHNICIAN));
         }
 

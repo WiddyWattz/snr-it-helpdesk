@@ -1,6 +1,7 @@
 package snr.ui;
 
 import snr.model.Status;
+import snr.model.User;
 import snr.service.DashboardSummary;
 
 import javax.swing.*;
@@ -11,7 +12,7 @@ import java.awt.*;
 
 public class DashboardPanel extends JPanel {
 
-    public DashboardPanel(AppContext app) {
+    public DashboardPanel(AppContext app, User user) {
         super(new BorderLayout());
         DashboardSummary summary = app.reports().getDashboard();
 
@@ -22,7 +23,7 @@ public class DashboardPanel extends JPanel {
         cards.add(statCard("Resolved", summary.getCount(Status.RESOLVED), new Color(0x2F855A)));
         cards.add(statCard("Overdue", summary.getOverdueCount(), Theme.DANGER));
 
-        JPanel overduePanel = new TicketsPanel(app, "Overdue Tickets",
+        JPanel overduePanel = new TicketsPanel(app, user, "Overdue Tickets",
                 () -> app.reports().getDashboard().getOverdueTickets(), TicketsPanel.Mode.ADMIN);
 
         JPanel body = new JPanel(new BorderLayout(0, 8));

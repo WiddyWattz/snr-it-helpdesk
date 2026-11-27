@@ -73,13 +73,25 @@ public class TicketService {
         ticket.assignTo(technician, LocalDateTime.now());
     }
 
-    public void changeStatus(Ticket ticket, Status next) throws HelpdeskException {
-        if (ticket.getAssignee() == null) throw new HelpdeskException("Assign a technician first.");
+    public void changeStatus(Ticket ticket, Technician technician, Status next) throws HelpdeskException {
+        checkAssignedTo(ticket, technician);
+        if (next == null) throw new HelpdeskException("Choose a status.");
+        if (!ticket.getStatus().canMoveTo(next)) throw new InvalidStatusChangeException(ticket.getStatus(), next);
+        if (next == Status.RESOLVED && ticket.getNotes().isEmpty()) {
+            throw new HelpdeskException("Add a repair note before resolving.");
+        }
         ticket.moveTo(next, LocalDateTime.now());
     }
 
     public void addNote(Ticket ticket, Technician technician, String note) throws HelpdeskException {
+        checkAssignedTo(ticket, technician);
+        if (ticket.getStatus() == Status.CLOSED) throw new HelpdeskException("This ticket is already closed.");
         if (note == null || note.trim().isEmpty()) throw new HelpdeskException("The note is empty.");
         ticket.addNote(new RepairNote(technician, note.trim(), LocalDateTime.now()));
+    }
+
+    private void checkAssignedTo(Ticket ticket, Technician technician) throws HelpdeskException {
+        if (ticket.getAssignee() == null) throw new HelpdeskException("Assign a technician first.");
+        if (ticket.getAssignee() != technician) throw new HelpdeskException("This ticket is not assigned to you.");
     }
 }
