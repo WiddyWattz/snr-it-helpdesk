@@ -33,7 +33,14 @@ public class MainFrame extends JFrame {
         setSize(1320, 780);
         setMinimumSize(new Dimension(1000, 620));
         setLocationRelativeTo(null);
+        build();
+        navItems.get(0).doClick();
+    }
 
+    // Creates the sidebar and page area; called again after a theme change.
+    private void build() {
+        getContentPane().removeAll();
+        navItems.clear();
         JPanel nav = new JPanel();
         nav.setLayout(new BoxLayout(nav, BoxLayout.Y_AXIS));
         nav.setOpaque(false);
@@ -79,7 +86,6 @@ public class MainFrame extends JFrame {
 
         add(sidebar, BorderLayout.WEST);
         add(main, BorderLayout.CENTER);
-        navItems.get(0).doClick();
     }
 
     private static int countActive(List<Ticket> tickets) {
@@ -127,6 +133,41 @@ public class MainFrame extends JFrame {
         who.setIcon(new Theme.Avatar(user.getFullName(), 32));
         who.setIconTextGap(10);
         who.setFont(Theme.BODY);
+        JLabel chevron = new JLabel("⌃");
+        chevron.setForeground(Theme.MUTED);
+        chevron.setFont(Theme.HEADING);
+
+        SlideMenu menu = new SlideMenu();
+        menu.addItem("Profile", this::showProfile);
+        menu.addItem("Preferences", this::showPreferences);
+
+        JPanel profile = new JPanel(new BorderLayout(8, 0)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                if (menu.isOpen()) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(Theme.SIDEBAR_ACTIVE);
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                    g2.dispose();
+                }
+                super.paintComponent(g);
+            }
+        };
+        profile.setOpaque(false);
+        profile.setBorder(new EmptyBorder(6, 6, 6, 8));
+        profile.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        profile.setToolTipText("Profile and preferences");
+        profile.add(who, BorderLayout.CENTER);
+        profile.add(chevron, BorderLayout.EAST);
+        profile.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                menu.toggle();
+                chevron.setText(menu.isOpen() ? "⌄" : "⌃");
+                profile.repaint();
+            }
+        });
 
         JButton logout = Theme.secondaryButton("Log out");
         logout.addActionListener(e -> {
@@ -134,25 +175,19 @@ public class MainFrame extends JFrame {
             new LoginFrame(app).setVisible(true);
         });
 
-        JPanel card = new JPanel(new BorderLayout(0, 10));
+        JPanel card = new JPanel(new BorderLayout(0, 8));
         card.setOpaque(false);
-        who.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        who.setToolTipText("Open settings");
-        who.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseClicked(java.awt.event.MouseEvent e) {
-                showSettings();
-            }
-        });
         card.setBorder(BorderFactory.createCompoundBorder(new MatteBorder(1, 0, 0, 0, Theme.BORDER),
-                new EmptyBorder(12, 14, 14, 14)));
-        card.add(who, BorderLayout.CENTER);
+                new EmptyBorder(8, 8, 14, 8)));
+        card.add(menu, BorderLayout.NORTH);
+        card.add(profile, BorderLayout.CENTER);
         card.add(logout, BorderLayout.SOUTH);
         return card;
     }
 
     private JComponent topBar() {
         crumb.setFont(Theme.BODY);
+        crumb.setForeground(Theme.TEXT);
         JLabel live = new JLabel("<html><span style='color:" + Theme.hex(Theme.SUCCESS) + "'>●</span> Live · "
                 + LocalDate.now().format(DateTimeFormatter.ofPattern("EEE, MMM d")) + "</html>");
         live.setForeground(Theme.MUTED);
@@ -198,18 +233,81 @@ public class MainFrame extends JFrame {
         content.repaint();
     }
 
-    public void showSettings() {
-        showPage("Settings", () -> new SettingsPanel(app, user, this), null);
+    public void showProfile() {
+        showPage("Profile", () -> new SettingsPanel(app, user, this, false), null);
     }
 
-    // Rebuild the window with the new colors and return to Settings.
+    public void showPreferences() {
+        showPage("Preferences", () -> new SettingsPanel(app, user, this, true), null);
+    }
+
+    // Repaint this same window in the new colors (no new window) and stay on Preferences.
     public void switchTheme(boolean dark) {
         Theme.setDark(dark);
-        MainFrame fresh = new MainFrame(app, user);
-        fresh.setBounds(getBounds());
-        fresh.showSettings();
-        fresh.setVisible(true);
-        dispose();
+        SwingUtilities.updateComponentTreeUI(this);
+        build();
+        showPreferences();
+        revalidate();
+        repaint();
+    }
+
+    // Small menu above the profile card that slides up when opened.
+    private static class SlideMenu extends JPanel {
+        private final JPanel items = new JPanel(new GridLayout(0, 1, 0, 2));
+        private final Timer timer = new Timer(12, null);
+        private int height;
+        private boolean open;
+
+        SlideMenu() {
+            super(new BorderLayout());
+            setOpaque(false);
+            items.setOpaque(false);
+            items.setBorder(new EmptyBorder(6, 0, 6, 0));
+            add(items, BorderLayout.SOUTH);
+            timer.addActionListener(e -> step());
+        }
+
+        void addItem(String label, Runnable action) {
+            NavItem item = new NavItem(label, null);
+            item.addActionListener(e -> {
+                toggle();
+                action.run();
+            });
+            items.add(item);
+        }
+
+        boolean isOpen() { return open; }
+
+        void toggle() {
+            open = !open;
+            timer.start();
+        }
+
+        private void step() {
+            int target = open ? items.getPreferredSize().height : 0;
+            height += Math.max(1, Math.abs(target - height) / 3) * Integer.signum(target - height);
+            if (height == target) timer.stop();
+            revalidate();
+            repaint();
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+            return new Dimension(super.getPreferredSize().width, height);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            if (height > 0) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Theme.CARD);
+                g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+                g2.setColor(Theme.BORDER);
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+                g2.dispose();
+            }
+        }
     }
 
     // Sidebar link: rounded highlight when active, optional count badge on the right.

@@ -14,20 +14,23 @@ public class SettingsPanel extends JPanel {
     private final JPasswordField newPassword = new JPasswordField();
     private final JPasswordField confirm = new JPasswordField();
 
-    public SettingsPanel(AppContext app, User user, MainFrame frame) {
+    public SettingsPanel(AppContext app, User user, MainFrame frame, boolean preferences) {
         super(new BorderLayout());
         this.app = app;
         this.user = user;
 
         JPanel column = new Theme.WidthTrackingPanel();
-        add(column, profileCard());
-        add(column, themeCard(frame));
-        add(column, passwordCard());
+        if (preferences) {
+            add(column, themeCard(frame));
+        } else {
+            add(column, profileCard());
+            add(column, passwordCard());
+        }
 
         JScrollPane scroll = new JScrollPane(column);
         scroll.getViewport().setBackground(Theme.BACKGROUND);
         scroll.setBorder(BorderFactory.createEmptyBorder());
-        add(Theme.page("Settings", scroll), BorderLayout.CENTER);
+        add(Theme.page(preferences ? "Preferences" : "Profile", scroll), BorderLayout.CENTER);
     }
 
     private void add(JPanel column, JComponent c) {
