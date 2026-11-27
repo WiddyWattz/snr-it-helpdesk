@@ -6,5 +6,5 @@ public class Reporter extends User {
     }
 
     @Override
-    public String getRole() { return "Reporter"; }
+    public String getRole() { return "Store Staff"; }
 }

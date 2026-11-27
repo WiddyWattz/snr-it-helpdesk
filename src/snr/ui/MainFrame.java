@@ -18,7 +18,7 @@ public class MainFrame extends JFrame {
     private final List<JButton> navButtons = new ArrayList<>();
 
     public MainFrame(AppContext app, User user) {
-        super("SnR IT Helpdesk - " + user.getRole());
+        super("SnR Warehouse Club IT Helpdesk - " + user.getRole());
         this.app = app;
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(1240, 700);
@@ -31,7 +31,7 @@ public class MainFrame extends JFrame {
         sidebar.setPreferredSize(new Dimension(210, 0));
         sidebar.setBorder(new EmptyBorder(20, 0, 20, 0));
 
-        JLabel brand = new JLabel("SnR IT Helpdesk");
+        JLabel brand = new JLabel("<html>SnR Warehouse Club<br>IT Helpdesk</html>");
         brand.setFont(Theme.HEADING.deriveFont(16f));
         brand.setForeground(Color.WHITE);
         brand.setBorder(new EmptyBorder(0, 20, 4, 0));

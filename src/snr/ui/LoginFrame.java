@@ -13,7 +13,7 @@ public class LoginFrame extends JFrame {
     private final JPasswordField passwordField = new JPasswordField();
 
     public LoginFrame(AppContext app) {
-        super("SnR IT Helpdesk - Log in");
+        super("SnR Warehouse Club IT Helpdesk - Log in");
         this.app = app;
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(420, 400);
@@ -29,10 +29,10 @@ public class LoginFrame extends JFrame {
         c.weightx = 1;
         c.insets = new Insets(4, 0, 4, 0);
 
-        JLabel title = new JLabel("SnR IT Helpdesk", SwingConstants.CENTER);
+        JLabel title = new JLabel("SnR Warehouse Club", SwingConstants.CENTER);
         title.setFont(Theme.TITLE);
         title.setForeground(Theme.SIDEBAR);
-        JLabel subtitle = new JLabel("Log in to continue", SwingConstants.CENTER);
+        JLabel subtitle = new JLabel("IT Helpdesk · Log in to continue", SwingConstants.CENTER);
         subtitle.setForeground(Theme.MUTED);
 
         c.gridy = 0; form.add(title, c);

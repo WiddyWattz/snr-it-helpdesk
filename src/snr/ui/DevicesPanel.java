@@ -77,7 +77,7 @@ public class DevicesPanel extends JPanel {
         JComboBox<DeviceType> type = new JComboBox<>(DeviceType.values());
         JTextField location = new JTextField();
         type.setSelectedIndex(-1);
-        Object[] form = {"Device code (e.g. PC-15)", code, "Type", type, "Location (e.g. Lab 3)", location};
+        Object[] form = {"Device code (e.g. POS-03)", code, "Type", type, "Location (e.g. Checkout Lane 3)", location};
 
         if (JOptionPane.showConfirmDialog(this, form, "Add Device", JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) return;

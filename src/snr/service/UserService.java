@@ -7,7 +7,7 @@ import java.util.Comparator;
 import java.util.List;
 
 public class UserService {
-    public static final String[] ROLES = {"Reporter", "Technician", "IT Admin"};
+    public static final String[] ROLES = {"Store Staff", "Technician", "IT Admin"};
 
     private final DataStore store;
 
