@@ -42,16 +42,18 @@ public class MainFrame extends JFrame {
 
         if (user instanceof Reporter) {
             addNav(sidebar, "Submit Ticket", () -> new SubmitTicketPanel(app, (Reporter) user));
-            addNav(sidebar, "My Tickets", () -> new TicketsPanel("My Tickets",
-                    app.tickets().getTicketsFor(user), TicketsPanel.Mode.REPORTER));
+            addNav(sidebar, "My Tickets", () -> new TicketsPanel(app, "My Tickets",
+                    () -> app.tickets().getTicketsFor(user), TicketsPanel.Mode.REPORTER));
         } else if (user instanceof ITAdmin) {
             addNav(sidebar, "Dashboard", () -> new DashboardPanel(app));
-            addNav(sidebar, "All Tickets", () -> new TicketsPanel("All Tickets",
-                    app.tickets().getTicketsFor(user), TicketsPanel.Mode.ADMIN));
+            addNav(sidebar, "Unassigned", () -> new TicketsPanel(app, "Unassigned Tickets",
+                    () -> app.tickets().getUnassigned(), TicketsPanel.Mode.ADMIN));
+            addNav(sidebar, "All Tickets", () -> new TicketsPanel(app, "All Tickets",
+                    () -> app.tickets().getTicketsFor(user), TicketsPanel.Mode.ADMIN));
             addNav(sidebar, "Devices", () -> new DevicesPanel(app));
         } else {
-            addNav(sidebar, "Assigned Tickets", () -> new TicketsPanel("Assigned Tickets",
-                    app.tickets().getTicketsFor(user), TicketsPanel.Mode.TECHNICIAN));
+            addNav(sidebar, "Assigned Tickets", () -> new TicketsPanel(app, "Assigned Tickets",
+                    () -> app.tickets().getTicketsFor(user), TicketsPanel.Mode.TECHNICIAN));
         }
 
         sidebar.add(Box.createVerticalGlue());

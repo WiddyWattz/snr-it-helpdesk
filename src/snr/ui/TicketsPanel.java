@@ -9,7 +9,9 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class TicketsPanel extends JPanel {
     public enum Mode { REPORTER, TECHNICIAN, ADMIN }
@@ -17,26 +19,23 @@ public class TicketsPanel extends JPanel {
     private static final String[] COLUMNS =
             {"ID", "Category", "Device", "Description", "Priority", "Status", "Assigned to", "Due"};
 
-    private final List<Ticket> tickets;
+    private final AppContext app;
+    private final Supplier<List<Ticket>> source;
+    private final DefaultTableModel model;
     private final JTable table;
+    private List<Ticket> tickets = new ArrayList<>();
 
-    public TicketsPanel(String title, List<Ticket> tickets, Mode mode) {
+    public TicketsPanel(AppContext app, String title, Supplier<List<Ticket>> source, Mode mode) {
         super(new BorderLayout());
-        this.tickets = tickets;
+        this.app = app;
+        this.source = source;
 
-        DefaultTableModel model = new DefaultTableModel(COLUMNS, 0) {
+        model = new DefaultTableModel(COLUMNS, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
-        for (Ticket t : tickets) {
-            model.addRow(new Object[]{
-                    t.getId(), t.getCategory(), t.getDevice(), t.getDescription(), t.getPriority(),
-                    t.getStatus(), t.getAssignee() == null ? "Unassigned" : t.getAssignee(),
-                    (t.isOverdue() ? "OVERDUE " : "") + Dates.format(t.getDueAt())});
-        }
-
         table = new JTable(model);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.addMouseListener(new MouseAdapter() {
@@ -72,7 +71,7 @@ public class TicketsPanel extends JPanel {
                 addAction(actions, "Add Repair Note", null);
             }
             case ADMIN -> {
-                addAction(actions, "Assign Technician", null);
+                addAction(actions, "Assign Technician", this::assignTechnician);
                 addAction(actions, "View Details", this::showDetails);
             }
         }
@@ -84,6 +83,18 @@ public class TicketsPanel extends JPanel {
         body.add(scroll, BorderLayout.CENTER);
         body.add(actions, BorderLayout.SOUTH);
         add(Theme.page(title, body), BorderLayout.CENTER);
+        refresh();
+    }
+
+    public void refresh() {
+        tickets = source.get();
+        model.setRowCount(0);
+        for (Ticket t : tickets) {
+            model.addRow(new Object[]{
+                    t.getId(), t.getCategory(), t.getDevice(), t.getDescription(), t.getPriority(),
+                    t.getStatus(), t.getAssignee() == null ? "Unassigned" : t.getAssignee(),
+                    (t.isOverdue() ? "OVERDUE " : "") + Dates.format(t.getDueAt())});
+        }
     }
 
     private Ticket getSelectedTicket() {
@@ -98,6 +109,14 @@ public class TicketsPanel extends JPanel {
     private void showDetails() {
         Ticket ticket = getSelectedTicket();
         if (ticket != null) new TicketDetailsDialog(SwingUtilities.getWindowAncestor(this), ticket).setVisible(true);
+    }
+
+    private void assignTechnician() {
+        Ticket ticket = getSelectedTicket();
+        if (ticket == null) return;
+        AssignDialog dialog = new AssignDialog(SwingUtilities.getWindowAncestor(this), app, ticket);
+        dialog.setVisible(true);
+        if (dialog.isAssigned()) refresh();
     }
 
     private void addAction(JPanel actions, String label, Runnable action) {

@@ -23,6 +23,7 @@ public class TicketDetailsDialog extends JDialog {
         addField(info, "Reported by", ticket.getReporter().getFullName());
         addField(info, "Assigned to", ticket.getAssignee() == null ? "Unassigned" : ticket.getAssignee().getFullName());
         addField(info, "Submitted", Dates.format(ticket.getCreatedAt()));
+        addField(info, "Assigned on", Dates.format(ticket.getAssignedAt()));
         addField(info, "Due", Dates.format(ticket.getDueAt()) + (ticket.isOverdue() ? " (OVERDUE)" : ""));
         addField(info, "Resolved", Dates.format(ticket.getResolvedAt()));
 
@@ -56,7 +57,7 @@ public class TicketDetailsDialog extends JDialog {
         setLayout(new BorderLayout());
         add(content, BorderLayout.CENTER);
         add(bottom, BorderLayout.SOUTH);
-        setSize(480, 520);
+        setSize(480, 550);
         setLocationRelativeTo(owner);
     }
 

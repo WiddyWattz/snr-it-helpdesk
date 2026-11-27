@@ -22,7 +22,8 @@ public class DashboardPanel extends JPanel {
         cards.add(statCard("Resolved", summary.getCount(Status.RESOLVED), new Color(0x2F855A)));
         cards.add(statCard("Overdue", summary.getOverdueCount(), Theme.DANGER));
 
-        JPanel overduePanel = new TicketsPanel("Overdue Tickets", summary.getOverdueTickets(), TicketsPanel.Mode.ADMIN);
+        JPanel overduePanel = new TicketsPanel(app, "Overdue Tickets",
+                () -> app.reports().getDashboard().getOverdueTickets(), TicketsPanel.Mode.ADMIN);
 
         JPanel body = new JPanel(new BorderLayout(0, 8));
         body.setOpaque(false);
