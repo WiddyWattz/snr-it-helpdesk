@@ -33,9 +33,7 @@ public class DevicesPanel extends JPanel {
         };
         table = new JTable(model);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setRowHeight(28);
-        table.setFont(Theme.BODY);
-        table.getTableHeader().setFont(Theme.HEADING.deriveFont(13f));
+        Theme.styleTable(table);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 12));
         actions.setOpaque(false);
@@ -46,9 +44,7 @@ public class DevicesPanel extends JPanel {
 
         JPanel body = new JPanel(new BorderLayout());
         body.setOpaque(false);
-        JScrollPane scroll = new JScrollPane(table);
-        scroll.getViewport().setBackground(Theme.CARD);
-        body.add(scroll, BorderLayout.CENTER);
+        body.add(Theme.tableCard(table), BorderLayout.CENTER);
         body.add(actions, BorderLayout.SOUTH);
         add(Theme.page("Device Inventory", body), BorderLayout.CENTER);
         refresh();
@@ -131,7 +127,7 @@ public class DevicesPanel extends JPanel {
                 Dialog.ModalityType.APPLICATION_MODAL);
         dialog.add(new TicketsPanel(app, user, "Repair History: " + device,
                 () -> app.devices().getRepairHistory(device), TicketsPanel.Mode.VIEW), BorderLayout.CENTER);
-        JButton close = Theme.primaryButton("Close");
+        JButton close = Theme.secondaryButton("Close");
         close.addActionListener(e -> dialog.dispose());
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 24, 12));
         bottom.setBackground(Theme.BACKGROUND);
@@ -144,7 +140,7 @@ public class DevicesPanel extends JPanel {
     }
 
     private void addAction(JPanel actions, String label, Runnable action) {
-        JButton button = Theme.primaryButton(label);
+        JButton button = actions.getComponentCount() == 0 ? Theme.primaryButton(label) : Theme.secondaryButton(label);
         button.addActionListener(e -> action.run());
         actions.add(button);
         actions.add(Box.createHorizontalStrut(8));

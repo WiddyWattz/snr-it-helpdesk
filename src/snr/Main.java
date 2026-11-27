@@ -5,14 +5,12 @@ import snr.data.DataStore;
 import snr.model.HelpdeskException;
 import snr.ui.AppContext;
 import snr.ui.LoginFrame;
+import snr.ui.Theme;
 
 public class Main {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            try {
-                UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-            } catch (Exception ignored) {
-            }
+            Theme.install();
             try {
                 AppContext app = new AppContext(new DataStore());
                 new LoginFrame(app).setVisible(true);

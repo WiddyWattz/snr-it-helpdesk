@@ -16,13 +16,12 @@ public class LoginFrame extends JFrame {
         super("SnR Warehouse Club IT Helpdesk - Log in");
         this.app = app;
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(420, 400);
+        setSize(480, 520);
         setLocationRelativeTo(null);
         setResizable(false);
 
-        JPanel form = new JPanel(new GridBagLayout());
-        form.setBackground(Theme.CARD);
-        form.setBorder(new EmptyBorder(30, 40, 30, 40));
+        Theme.Card form = new Theme.Card(new GridBagLayout());
+        form.setBorder(new EmptyBorder(28, 32, 28, 32));
         GridBagConstraints c = new GridBagConstraints();
         c.gridx = 0;
         c.fill = GridBagConstraints.HORIZONTAL;
@@ -31,16 +30,16 @@ public class LoginFrame extends JFrame {
 
         JLabel title = new JLabel("SnR Warehouse Club", SwingConstants.CENTER);
         title.setFont(Theme.TITLE);
-        title.setForeground(Theme.SIDEBAR);
+        title.setForeground(Theme.TEXT);
         JLabel subtitle = new JLabel("IT Helpdesk · Log in to continue", SwingConstants.CENTER);
         subtitle.setForeground(Theme.MUTED);
 
         c.gridy = 0; form.add(title, c);
         c.gridy = 1; c.insets = new Insets(0, 0, 20, 0); form.add(subtitle, c);
         c.insets = new Insets(4, 0, 4, 0);
-        c.gridy = 2; form.add(new JLabel("Username"), c);
+        c.gridy = 2; form.add(Theme.muted("Username"), c);
         c.gridy = 3; form.add(usernameField, c);
-        c.gridy = 4; form.add(new JLabel("Password"), c);
+        c.gridy = 4; form.add(Theme.muted("Password"), c);
         c.gridy = 5; form.add(passwordField, c);
 
         JButton login = Theme.primaryButton("Log in");
@@ -48,7 +47,14 @@ public class LoginFrame extends JFrame {
 
         login.addActionListener(e -> logIn());
         getRootPane().setDefaultButton(login);
-        setContentPane(form);
+        JPanel page = new JPanel(new GridBagLayout());
+        page.setBackground(Theme.BACKGROUND);
+        page.setBorder(new EmptyBorder(30, 30, 30, 30));
+        GridBagConstraints full = new GridBagConstraints();
+        full.fill = GridBagConstraints.HORIZONTAL;
+        full.weightx = 1;
+        page.add(form, full);
+        setContentPane(page);
     }
 
     private void logIn() {

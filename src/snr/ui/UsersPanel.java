@@ -33,9 +33,17 @@ public class UsersPanel extends JPanel {
         };
         table = new JTable(model);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setRowHeight(28);
-        table.setFont(Theme.BODY);
-        table.getTableHeader().setFont(Theme.HEADING.deriveFont(13f));
+        Theme.styleTable(table);
+        table.getColumnModel().getColumn(1).setCellRenderer(new Theme.CellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object value, boolean selected,
+                                                           boolean focus, int row, int col) {
+                JLabel l = (JLabel) super.getTableCellRendererComponent(t, value, selected, focus, row, col);
+                l.setIcon(new Theme.Avatar(String.valueOf(value), 24));
+                l.setIconTextGap(8);
+                return l;
+            }
+        });
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 12));
         actions.setOpaque(false);
@@ -44,9 +52,7 @@ public class UsersPanel extends JPanel {
 
         JPanel body = new JPanel(new BorderLayout());
         body.setOpaque(false);
-        JScrollPane scroll = new JScrollPane(table);
-        scroll.getViewport().setBackground(Theme.CARD);
-        body.add(scroll, BorderLayout.CENTER);
+        body.add(Theme.tableCard(table), BorderLayout.CENTER);
         body.add(actions, BorderLayout.SOUTH);
         add(Theme.page("User Accounts", body), BorderLayout.CENTER);
         refresh();
@@ -106,7 +112,7 @@ public class UsersPanel extends JPanel {
     }
 
     private void addAction(JPanel actions, String label, Runnable action) {
-        JButton button = Theme.primaryButton(label);
+        JButton button = actions.getComponentCount() == 0 ? Theme.primaryButton(label) : Theme.secondaryButton(label);
         button.addActionListener(e -> action.run());
         actions.add(button);
         actions.add(Box.createHorizontalStrut(8));

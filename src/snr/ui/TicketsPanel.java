@@ -37,6 +37,8 @@ public class TicketsPanel extends JPanel {
     private final JComboBox<Object> categoryFilter = filterBox("Any category", Category.values());
     private final JComboBox<Object> priorityFilter = filterBox("Any priority", Priority.values());
     private final JLabel countLabel = new JLabel();
+    private final JPanel filters;
+    private final JPanel page;
     private List<Ticket> allTickets = new ArrayList<>();
     private List<Ticket> tickets = new ArrayList<>();
 
@@ -60,21 +62,44 @@ public class TicketsPanel extends JPanel {
                 if (e.getClickCount() == 2) showDetails();
             }
         });
-        table.setRowHeight(28);
-        table.setFont(Theme.BODY);
-        table.getTableHeader().setFont(Theme.HEADING.deriveFont(13f));
-        table.getColumnModel().getColumn(0).setMaxWidth(50);
-        table.getColumnModel().getColumn(3).setPreferredWidth(220);
-        table.getColumnModel().getColumn(7).setPreferredWidth(170);
-        table.getColumnModel().getColumn(7).setCellRenderer(new DefaultTableCellRenderer() {
+        Theme.styleTable(table);
+        table.getColumnModel().getColumn(0).setPreferredWidth(80);
+        table.getColumnModel().getColumn(0).setMaxWidth(90);
+        table.getColumnModel().getColumn(1).setPreferredWidth(90);
+        table.getColumnModel().getColumn(2).setPreferredWidth(190);
+        table.getColumnModel().getColumn(3).setPreferredWidth(260);
+        table.getColumnModel().getColumn(6).setPreferredWidth(130);
+        table.getColumnModel().getColumn(7).setPreferredWidth(150);
+        table.getColumnModel().getColumn(0).setCellRenderer(new Theme.CellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable tbl, Object value, boolean selected,
                                                            boolean focus, int row, int col) {
-                Component c = super.getTableCellRendererComponent(tbl, value, selected, focus, row, col);
-                if (!selected) {
-                    c.setForeground(value.toString().startsWith("OVERDUE") ? Theme.DANGER : Theme.TEXT);
-                }
-                return c;
+                JLabel l = (JLabel) super.getTableCellRendererComponent(tbl, value, selected, focus, row, col);
+                l.setText(String.format("TKT-%04d", (Integer) value));
+                l.setFont(Theme.MONO);
+                l.setForeground(Theme.MUTED);
+                return l;
+            }
+        });
+        table.getColumnModel().getColumn(6).setCellRenderer(new Theme.CellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable tbl, Object value, boolean selected,
+                                                           boolean focus, int row, int col) {
+                JLabel l = (JLabel) super.getTableCellRendererComponent(tbl, value, selected, focus, row, col);
+                boolean none = "Unassigned".equals(String.valueOf(value));
+                l.setIcon(none ? null : new Theme.Avatar(String.valueOf(value), 24));
+                l.setIconTextGap(8);
+                l.setForeground(none ? Theme.MUTED : Theme.TEXT);
+                return l;
+            }
+        });
+        table.getColumnModel().getColumn(7).setCellRenderer(new Theme.CellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable tbl, Object value, boolean selected,
+                                                           boolean focus, int row, int col) {
+                JLabel l = (JLabel) super.getTableCellRendererComponent(tbl, value, selected, focus, row, col);
+                l.setForeground(value.toString().startsWith("OVERDUE") ? Theme.DANGER : Theme.MUTED);
+                return l;
             }
         });
 
@@ -101,13 +126,23 @@ public class TicketsPanel extends JPanel {
 
         JPanel body = new JPanel(new BorderLayout());
         body.setOpaque(false);
-        body.add(filterBar(), BorderLayout.NORTH);
-        JScrollPane scroll = new JScrollPane(table);
-        scroll.getViewport().setBackground(Theme.CARD);
-        body.add(scroll, BorderLayout.CENTER);
+        filters = filterBar();
+        body.add(filters, BorderLayout.NORTH);
+        body.add(Theme.tableCard(table), BorderLayout.CENTER);
         body.add(actions, BorderLayout.SOUTH);
-        add(Theme.page(title, body), BorderLayout.CENTER);
+        page = Theme.page(title, body);
+        add(page, BorderLayout.CENTER);
         refresh();
+    }
+
+    // Smaller version for the dashboard: no filter bar, no page padding.
+    public TicketsPanel compact() {
+        filters.setVisible(false);
+        page.setBorder(BorderFactory.createEmptyBorder());
+        JLabel heading = (JLabel) page.getComponent(0);
+        heading.setFont(Theme.HEADING.deriveFont(15f));
+        heading.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+        return this;
     }
 
     public void refresh() {
@@ -160,7 +195,7 @@ public class TicketsPanel extends JPanel {
             public void removeUpdate(DocumentEvent e) { applyFilters(); }
             public void changedUpdate(DocumentEvent e) { applyFilters(); }
         });
-        JButton clear = new JButton("Clear");
+        JButton clear = Theme.secondaryButton("Clear");
         clear.addActionListener(e -> {
             searchField.setText("");
             statusFilter.setSelectedIndex(0);
@@ -171,10 +206,12 @@ public class TicketsPanel extends JPanel {
 
         JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         bar.setOpaque(false);
-        bar.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
-        bar.add(new JLabel("Search"));
+        bar.setBorder(BorderFactory.createEmptyBorder(0, 0, 12, 0));
+        searchField.putClientProperty("JTextField.placeholderText", "Search tickets...");
+        bar.add(Theme.muted("Search"));
         bar.add(searchField);
         for (JComboBox<Object> box : List.of(statusFilter, categoryFilter, priorityFilter)) {
+            box.setPreferredSize(new Dimension(box.getPreferredSize().width, searchField.getPreferredSize().height));
             box.addActionListener(e -> applyFilters());
             bar.add(box);
         }
@@ -274,7 +311,7 @@ public class TicketsPanel extends JPanel {
     }
 
     private void addAction(JPanel actions, String label, Runnable action) {
-        JButton button = Theme.primaryButton(label);
+        JButton button = actions.getComponentCount() == 0 ? Theme.primaryButton(label) : Theme.secondaryButton(label);
         button.addActionListener(e -> action.run());
         actions.add(button);
         actions.add(Box.createHorizontalStrut(8));

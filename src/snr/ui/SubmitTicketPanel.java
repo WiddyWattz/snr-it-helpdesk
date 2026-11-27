@@ -25,8 +25,7 @@ public class SubmitTicketPanel extends JPanel {
         descriptionArea.setWrapStyleWord(true);
         descriptionArea.setFont(Theme.BODY);
 
-        JPanel form = new JPanel(new GridBagLayout());
-        form.setBackground(Theme.CARD);
+        Theme.Card form = new Theme.Card(new GridBagLayout());
         form.setBorder(new EmptyBorder(20, 20, 20, 20));
         GridBagConstraints c = new GridBagConstraints();
         c.anchor = GridBagConstraints.NORTHWEST;

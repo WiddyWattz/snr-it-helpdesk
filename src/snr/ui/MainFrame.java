@@ -3,106 +3,239 @@ package snr.ui;
 import snr.model.HelpdeskException;
 import snr.model.ITAdmin;
 import snr.model.Reporter;
+import snr.model.Status;
+import snr.model.Technician;
+import snr.model.Ticket;
 import snr.model.User;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.MatteBorder;
 import java.awt.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
 public class MainFrame extends JFrame {
     private final AppContext app;
+    private final User user;
     private final JPanel content = new JPanel(new BorderLayout());
-    private final List<JButton> navButtons = new ArrayList<>();
+    private final JLabel crumb = new JLabel();
+    private final List<NavItem> navItems = new ArrayList<>();
 
     public MainFrame(AppContext app, User user) {
         super("SnR Warehouse Club IT Helpdesk - " + user.getRole());
         this.app = app;
+        this.user = user;
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(1240, 700);
-        setMinimumSize(new Dimension(900, 560));
+        setSize(1320, 780);
+        setMinimumSize(new Dimension(1000, 620));
         setLocationRelativeTo(null);
 
-        JPanel sidebar = new JPanel();
-        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
-        sidebar.setBackground(Theme.SIDEBAR);
-        sidebar.setPreferredSize(new Dimension(210, 0));
-        sidebar.setBorder(new EmptyBorder(20, 0, 20, 0));
-
-        JLabel brand = new JLabel("<html>SnR Warehouse Club<br>IT Helpdesk</html>");
-        brand.setFont(Theme.HEADING.deriveFont(16f));
-        brand.setForeground(Color.WHITE);
-        brand.setBorder(new EmptyBorder(0, 20, 4, 0));
-        JLabel who = new JLabel(user.getFullName() + " · " + user.getRole());
-        who.setForeground(new Color(0xA0AEC0));
-        who.setBorder(new EmptyBorder(0, 20, 20, 0));
-        sidebar.add(brand);
-        sidebar.add(who);
+        JPanel nav = new JPanel();
+        nav.setLayout(new BoxLayout(nav, BoxLayout.Y_AXIS));
+        nav.setOpaque(false);
 
         if (user instanceof Reporter) {
-            addNav(sidebar, "Submit Ticket", () -> new SubmitTicketPanel(app, (Reporter) user));
-            addNav(sidebar, "My Tickets", () -> new TicketsPanel(app, user, "My Tickets",
-                    () -> app.tickets().getTicketsFor(user), TicketsPanel.Mode.REPORTER));
+            section(nav, "NAVIGATION");
+            addNav(nav, "Submit Ticket", null, () -> new SubmitTicketPanel(app, (Reporter) user));
+            addNav(nav, "My Tickets", () -> countActive(app.tickets().getTicketsFor(user)),
+                    () -> new TicketsPanel(app, user, "My Tickets",
+                            () -> app.tickets().getTicketsFor(user), TicketsPanel.Mode.REPORTER));
         } else if (user instanceof ITAdmin) {
-            addNav(sidebar, "Dashboard", () -> new DashboardPanel(app, user));
-            addNav(sidebar, "Unassigned", () -> new TicketsPanel(app, user, "Unassigned Tickets",
-                    () -> app.tickets().getUnassigned(), TicketsPanel.Mode.ADMIN));
-            addNav(sidebar, "All Tickets", () -> new TicketsPanel(app, user, "All Tickets",
-                    () -> app.tickets().getTicketsFor(user), TicketsPanel.Mode.ADMIN));
-            addNav(sidebar, "Devices", () -> new DevicesPanel(app, user));
-            addNav(sidebar, "Users", () -> new UsersPanel(app, user));
+            section(nav, "NAVIGATION");
+            addNav(nav, "Dashboard", null, () -> new DashboardPanel(app, user));
+            addNav(nav, "Unassigned", () -> app.tickets().getUnassigned().size(),
+                    () -> new TicketsPanel(app, user, "Unassigned Tickets",
+                            () -> app.tickets().getUnassigned(), TicketsPanel.Mode.ADMIN));
+            addNav(nav, "All Tickets", () -> countActive(app.tickets().getTicketsFor(user)),
+                    () -> new TicketsPanel(app, user, "All Tickets",
+                            () -> app.tickets().getTicketsFor(user), TicketsPanel.Mode.ADMIN));
+            section(nav, "MANAGEMENT");
+            addNav(nav, "Devices", () -> app.devices().getActiveDevices().size(), () -> new DevicesPanel(app, user));
+            addNav(nav, "Users", null, () -> new UsersPanel(app, user));
         } else {
-            addNav(sidebar, "Assigned Tickets", () -> new TicketsPanel(app, user, "Assigned Tickets",
-                    () -> app.tickets().getTicketsFor(user), TicketsPanel.Mode.TECHNICIAN));
+            section(nav, "NAVIGATION");
+            addNav(nav, "Assigned Tickets", () -> app.tickets().countActiveTickets((Technician) user),
+                    () -> new TicketsPanel(app, user, "Assigned Tickets",
+                            () -> app.tickets().getTicketsFor(user), TicketsPanel.Mode.TECHNICIAN));
         }
 
-        sidebar.add(Box.createVerticalGlue());
-        JButton logout = navButton("Log out");
+        JPanel sidebar = new JPanel(new BorderLayout());
+        sidebar.setBackground(Theme.SIDEBAR);
+        sidebar.setPreferredSize(new Dimension(240, 0));
+        sidebar.setBorder(new MatteBorder(0, 0, 0, 1, Theme.BORDER));
+        sidebar.add(brand(), BorderLayout.NORTH);
+        sidebar.add(nav, BorderLayout.CENTER);
+        sidebar.add(userCard(), BorderLayout.SOUTH);
+
+        content.setBackground(Theme.BACKGROUND);
+        JPanel main = new JPanel(new BorderLayout());
+        main.add(topBar(), BorderLayout.NORTH);
+        main.add(content, BorderLayout.CENTER);
+
+        add(sidebar, BorderLayout.WEST);
+        add(main, BorderLayout.CENTER);
+        navItems.get(0).doClick();
+    }
+
+    private static int countActive(List<Ticket> tickets) {
+        int n = 0;
+        for (Ticket t : tickets) {
+            if (t.getStatus() == Status.OPEN || t.getStatus() == Status.IN_PROGRESS) n++;
+        }
+        return n;
+    }
+
+    private JComponent brand() {
+        JLabel logo = new JLabel("S", SwingConstants.CENTER) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Theme.PRIMARY);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        logo.setPreferredSize(new Dimension(34, 34));
+        logo.setForeground(Color.WHITE);
+        logo.setFont(Theme.HEADING.deriveFont(16f));
+
+        JLabel name = new JLabel("SnR Warehouse Club");
+        name.setFont(Theme.HEADING);
+        JPanel text = new JPanel(new GridLayout(2, 1));
+        text.setOpaque(false);
+        text.add(name);
+        text.add(Theme.muted("IT Helpdesk"));
+
+        JPanel brand = new JPanel(new BorderLayout(10, 0));
+        brand.setOpaque(false);
+        brand.setBorder(new EmptyBorder(16, 16, 12, 16));
+        brand.add(logo, BorderLayout.WEST);
+        brand.add(text, BorderLayout.CENTER);
+        return brand;
+    }
+
+    private JComponent userCard() {
+        JLabel who = new JLabel("<html><b>" + user.getFullName() + "</b><br><span style='color:#8B92A3'>"
+                + user.getRole() + " · @" + user.getUsername() + "</span></html>");
+        who.setIcon(new Theme.Avatar(user.getFullName(), 32));
+        who.setIconTextGap(10);
+        who.setFont(Theme.BODY);
+
+        JButton logout = Theme.secondaryButton("Log out");
         logout.addActionListener(e -> {
             dispose();
             new LoginFrame(app).setVisible(true);
         });
-        sidebar.add(logout);
 
-        add(sidebar, BorderLayout.WEST);
-        add(content, BorderLayout.CENTER);
-        navButtons.get(0).doClick();
+        JPanel card = new JPanel(new BorderLayout(0, 10));
+        card.setOpaque(false);
+        card.setBorder(BorderFactory.createCompoundBorder(new MatteBorder(1, 0, 0, 0, Theme.BORDER),
+                new EmptyBorder(12, 14, 14, 14)));
+        card.add(who, BorderLayout.CENTER);
+        card.add(logout, BorderLayout.SOUTH);
+        return card;
     }
 
-    private void addNav(JPanel sidebar, String label, Supplier<JComponent> page) {
-        JButton button = navButton(label);
-        button.addActionListener(e -> {
-            navButtons.forEach(b -> b.setBackground(Theme.SIDEBAR));
-            button.setBackground(Theme.SIDEBAR_ACTIVE);
+    private JComponent topBar() {
+        crumb.setFont(Theme.BODY);
+        JLabel live = new JLabel("<html><span style='color:#22C55E'>●</span> Live · "
+                + LocalDate.now().format(DateTimeFormatter.ofPattern("EEE, MMM d")) + "</html>");
+        live.setForeground(Theme.MUTED);
+        live.setFont(Theme.SMALL);
+
+        JPanel bar = new JPanel(new BorderLayout());
+        bar.setBackground(Theme.BACKGROUND);
+        bar.setPreferredSize(new Dimension(0, 52));
+        bar.setBorder(BorderFactory.createCompoundBorder(new MatteBorder(0, 0, 1, 0, Theme.BORDER),
+                new EmptyBorder(0, 26, 0, 26)));
+        bar.add(crumb, BorderLayout.WEST);
+        bar.add(live, BorderLayout.EAST);
+        return bar;
+    }
+
+    private void section(JPanel nav, String text) {
+        JLabel label = Theme.muted(text);
+        label.setFont(Theme.LABEL);
+        label.setBorder(new EmptyBorder(14, 18, 6, 0));
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        nav.add(label);
+    }
+
+    private void addNav(JPanel nav, String label, Supplier<Integer> badge, Supplier<JComponent> page) {
+        NavItem item = new NavItem(label, badge);
+        item.addActionListener(e -> {
             try {
                 app.reload();
             } catch (HelpdeskException ex) {
                 JOptionPane.showMessageDialog(this, ex.getMessage(), "Could not load data", JOptionPane.WARNING_MESSAGE);
             }
+            navItems.forEach(n -> n.setActive(n == item));
+            navItems.forEach(NavItem::updateBadge);
+            crumb.setText("<html><span style='color:#8B92A3'>SnR Warehouse Club &nbsp;›&nbsp;</span> " + label + "</html>");
             content.removeAll();
             content.add(page.get(), BorderLayout.CENTER);
             content.revalidate();
             content.repaint();
         });
-        navButtons.add(button);
-        sidebar.add(button);
+        navItems.add(item);
+        nav.add(item);
     }
 
-    private JButton navButton(String label) {
-        JButton button = new JButton(label);
-        button.setAlignmentX(Component.LEFT_ALIGNMENT);
-        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
-        button.setHorizontalAlignment(SwingConstants.LEFT);
-        button.setFont(Theme.BODY.deriveFont(14f));
-        button.setForeground(Color.WHITE);
-        button.setBackground(Theme.SIDEBAR);
-        button.setBorder(new EmptyBorder(10, 20, 10, 20));
-        button.setFocusPainted(false);
-        button.setContentAreaFilled(true);
-        button.setOpaque(true);
-        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        return button;
+    // Sidebar link: rounded highlight when active, optional count badge on the right.
+    private static class NavItem extends JButton {
+        private final Supplier<Integer> badge;
+        private final JLabel badgeLabel = new JLabel();
+        private boolean active;
+
+        NavItem(String text, Supplier<Integer> badge) {
+            this.badge = badge;
+            setLayout(new BorderLayout());
+            JLabel name = new JLabel(text);
+            name.setFont(Theme.BODY.deriveFont(14f));
+            badgeLabel.setFont(Theme.LABEL);
+            badgeLabel.setForeground(Theme.MUTED);
+            add(name, BorderLayout.CENTER);
+            add(badgeLabel, BorderLayout.EAST);
+            setContentAreaFilled(false);
+            setFocusPainted(false);
+            setBorderPainted(false);
+            setAlignmentX(Component.LEFT_ALIGNMENT);
+            setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+            setPreferredSize(new Dimension(240, 40));
+            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        }
+
+        void setActive(boolean active) {
+            this.active = active;
+            repaint();
+        }
+
+        void updateBadge() {
+            Integer n = badge == null ? null : badge.get();
+            badgeLabel.setText(n == null || n == 0 ? "" : String.valueOf(n));
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            if (active || getModel().isRollover()) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(active ? Theme.SIDEBAR_ACTIVE : Theme.CARD);
+                g2.fillRoundRect(8, 1, getWidth() - 16, getHeight() - 2, 10, 10);
+                g2.dispose();
+            }
+            super.paintComponent(g);
+        }
+
+        @Override
+        public Insets getInsets() {
+            return new Insets(9, 20, 9, 22);
+        }
     }
 }
