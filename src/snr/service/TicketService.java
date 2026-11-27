@@ -69,11 +69,33 @@ public class TicketService {
     public void changeStatus(Ticket ticket, Technician technician, Status next) throws HelpdeskException {
         checkAssignedTo(ticket, technician);
         if (next == null) throw new HelpdeskException("Choose a status.");
+        if (next == Status.CLOSED) throw new HelpdeskException("Only the reporter or the IT admin can close a ticket.");
         if (!ticket.getStatus().canMoveTo(next)) throw new InvalidStatusChangeException(ticket.getStatus(), next);
-        if (next == Status.RESOLVED && ticket.getNotes().isEmpty()) {
+        List<RepairNote> notes = ticket.getNotes();
+        if (next == Status.RESOLVED && (notes.isEmpty() || !(notes.get(notes.size() - 1).getAuthor() instanceof Technician))) {
             throw new HelpdeskException("Add a repair note before resolving.");
         }
         ticket.moveTo(next, LocalDateTime.now());
+        store.updateTicket(ticket);
+    }
+
+    public void closeTicket(Ticket ticket, User user) throws HelpdeskException {
+        if (!(user instanceof ITAdmin) && !user.equals(ticket.getReporter())) {
+            throw new HelpdeskException("Only the reporter or the IT admin can close this ticket.");
+        }
+        if (ticket.getStatus() != Status.RESOLVED) throw new HelpdeskException("Only resolved tickets can be closed.");
+        ticket.moveTo(Status.CLOSED, LocalDateTime.now());
+        store.updateTicket(ticket);
+    }
+
+    public void reopen(Ticket ticket, User reporter, String reason) throws HelpdeskException {
+        if (!reporter.equals(ticket.getReporter())) throw new HelpdeskException("You can only reopen your own tickets.");
+        if (ticket.getStatus() != Status.RESOLVED) throw new HelpdeskException("Only resolved tickets can be reopened.");
+        if (reason == null || reason.trim().isEmpty()) throw new HelpdeskException("Say why the problem is not fixed.");
+        RepairNote note = new RepairNote(reporter, "Reopened: " + reason.trim(), LocalDateTime.now());
+        store.insertNote(ticket, note);
+        ticket.addNote(note);
+        ticket.moveTo(Status.IN_PROGRESS, LocalDateTime.now());
         store.updateTicket(ticket);
     }
 

@@ -47,7 +47,7 @@ public class DataStore {
         for (Map<String, Object> r : noteRows) {
             Ticket t = byId.get(num(r, "ticket_id"));
             if (t != null) {
-                t.addNote(new RepairNote(userAs(Technician.class, str(r, "technician")), str(r, "note"),
+                t.addNote(new RepairNote(users.get(str(r, "technician")), str(r, "note"),
                         Dates.fromDb(r.get("created_at"))));
             }
         }
@@ -116,7 +116,7 @@ public class DataStore {
     public void insertNote(Ticket ticket, RepairNote note) throws HelpdeskException {
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("ticket_id", ticket.getId());
-        row.put("technician", note.getTechnician().getUsername());
+        row.put("technician", note.getAuthor().getUsername());
         row.put("note", note.getNote());
         row.put("created_at", Dates.toDb(note.getDateTime()));
         write(() -> db.insert("repair_note", row));

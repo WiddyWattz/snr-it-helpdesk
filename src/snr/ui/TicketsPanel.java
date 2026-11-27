@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 public class TicketsPanel extends JPanel {
-    public enum Mode { VIEW, TECHNICIAN, ADMIN }
+    public enum Mode { VIEW, REPORTER, TECHNICIAN, ADMIN }
 
     private static final String[] COLUMNS =
             {"ID", "Category", "Device", "Description", "Priority", "Status", "Assigned to", "Due"};
@@ -72,6 +72,11 @@ public class TicketsPanel extends JPanel {
         actions.setOpaque(false);
         switch (mode) {
             case VIEW -> addAction(actions, "View Details", this::showDetails);
+            case REPORTER -> {
+                addAction(actions, "View Details", this::showDetails);
+                addAction(actions, "Confirm Fixed", this::closeTicket);
+                addAction(actions, "Reopen", this::reopen);
+            }
             case TECHNICIAN -> {
                 addAction(actions, "Update Status", this::updateStatus);
                 addAction(actions, "Add Repair Note", this::addRepairNote);
@@ -79,6 +84,7 @@ public class TicketsPanel extends JPanel {
             }
             case ADMIN -> {
                 addAction(actions, "Assign Technician", this::assignTechnician);
+                addAction(actions, "Close Ticket", this::closeTicket);
                 addAction(actions, "View Details", this::showDetails);
             }
         }
@@ -140,6 +146,40 @@ public class TicketsPanel extends JPanel {
         } catch (HelpdeskException e) {
             refresh();
             JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot update status", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    private void closeTicket() {
+        Ticket ticket = getSelectedTicket();
+        if (ticket == null) return;
+        if (JOptionPane.showConfirmDialog(this, "Close Ticket #" + ticket.getId() + "? Only do this if the problem is fixed.",
+                "Close Ticket", JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) return;
+        try {
+            app.tickets().closeTicket(ticket, user);
+            refresh();
+        } catch (HelpdeskException e) {
+            refresh();
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot close ticket", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    private void reopen() {
+        Ticket ticket = getSelectedTicket();
+        if (ticket == null) return;
+        JTextArea area = new JTextArea(4, 30);
+        area.setLineWrap(true);
+        area.setWrapStyleWord(true);
+        Object[] form = {"What is still wrong?", new JScrollPane(area)};
+        if (JOptionPane.showConfirmDialog(this, form, "Reopen Ticket #" + ticket.getId(),
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) return;
+        try {
+            app.tickets().reopen(ticket, user, area.getText());
+            refresh();
+            JOptionPane.showMessageDialog(this, "Ticket #" + ticket.getId() + " reopened and sent back to "
+                    + ticket.getAssignee() + ".");
+        } catch (HelpdeskException e) {
+            refresh();
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot reopen ticket", JOptionPane.WARNING_MESSAGE);
         }
     }
 

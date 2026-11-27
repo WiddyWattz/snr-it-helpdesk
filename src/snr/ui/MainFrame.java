@@ -44,7 +44,7 @@ public class MainFrame extends JFrame {
         if (user instanceof Reporter) {
             addNav(sidebar, "Submit Ticket", () -> new SubmitTicketPanel(app, (Reporter) user));
             addNav(sidebar, "My Tickets", () -> new TicketsPanel(app, user, "My Tickets",
-                    () -> app.tickets().getTicketsFor(user), TicketsPanel.Mode.VIEW));
+                    () -> app.tickets().getTicketsFor(user), TicketsPanel.Mode.REPORTER));
         } else if (user instanceof ITAdmin) {
             addNav(sidebar, "Dashboard", () -> new DashboardPanel(app, user));
             addNav(sidebar, "Unassigned", () -> new TicketsPanel(app, user, "Unassigned Tickets",

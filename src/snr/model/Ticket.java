@@ -64,7 +64,7 @@ public abstract class Ticket {
     public void moveTo(Status next, LocalDateTime when) throws InvalidStatusChangeException {
         if (!status.canMoveTo(next)) throw new InvalidStatusChangeException(status, next);
         status = next;
-        if (next == Status.RESOLVED) resolvedAt = when;
+        resolvedAt = next == Status.IN_PROGRESS ? null : (next == Status.RESOLVED ? when : resolvedAt);
     }
 
     public void addNote(RepairNote note) { notes.add(note); }

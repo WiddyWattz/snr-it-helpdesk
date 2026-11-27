@@ -31,7 +31,7 @@ public class TicketDetailsDialog extends JDialog {
 
         StringBuilder notes = new StringBuilder();
         for (RepairNote n : ticket.getNotes()) {
-            notes.append(Dates.format(n.getDateTime())).append(" - ").append(n.getTechnician().getFullName())
+            notes.append(Dates.format(n.getDateTime())).append(" - ").append((n.getAuthor() == null ? "Unknown" : n.getAuthor().getFullName()))
                     .append(":\n").append(n.getNote()).append("\n\n");
         }
         JTextArea notesArea = readOnlyArea(notes.length() == 0 ? "No repair notes yet." : notes.toString().trim());

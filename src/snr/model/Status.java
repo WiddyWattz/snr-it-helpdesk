@@ -10,9 +10,9 @@ public enum Status {
 
     Status(String label) { this.label = label; }
 
-    // Only one step forward at a time.
+    // One step forward at a time, or Resolved back to In Progress when reopened.
     public boolean canMoveTo(Status next) {
-        return next.ordinal() == ordinal() + 1;
+        return next.ordinal() == ordinal() + 1 || (this == RESOLVED && next == IN_PROGRESS);
     }
 
     @Override
