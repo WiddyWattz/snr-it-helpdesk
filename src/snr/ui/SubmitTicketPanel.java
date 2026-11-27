@@ -1,6 +1,7 @@
 package snr.ui;
 
 import snr.model.*;
+import snr.util.Dates;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -19,6 +20,7 @@ public class SubmitTicketPanel extends JPanel {
         this.app = app;
         this.reporter = reporter;
         deviceBox = new JComboBox<>(app.devices().getAllDevices().toArray(new Device[0]));
+        clearForm();
         descriptionArea.setLineWrap(true);
         descriptionArea.setWrapStyleWord(true);
         descriptionArea.setFont(Theme.BODY);
@@ -47,6 +49,13 @@ public class SubmitTicketPanel extends JPanel {
         add(Theme.page("Submit a Ticket", wrapper), BorderLayout.CENTER);
     }
 
+    private void clearForm() {
+        categoryBox.setSelectedIndex(-1);
+        priorityBox.setSelectedIndex(-1);
+        deviceBox.setSelectedIndex(-1);
+        descriptionArea.setText("");
+    }
+
     private void addRow(JPanel form, GridBagConstraints c, int row, String label, JComponent field) {
         c.gridx = 0; c.gridy = row; c.weightx = 0;
         form.add(new JLabel(label), c);
@@ -59,8 +68,11 @@ public class SubmitTicketPanel extends JPanel {
             Ticket ticket = app.tickets().submit(reporter, (Category) categoryBox.getSelectedItem(),
                     (Priority) priorityBox.getSelectedItem(), (Device) deviceBox.getSelectedItem(),
                     descriptionArea.getText());
-            descriptionArea.setText("");
-            JOptionPane.showMessageDialog(this, "Ticket #" + ticket.getId() + " submitted. Status: Open.");
+            clearForm();
+            JOptionPane.showMessageDialog(this, "Ticket #" + ticket.getId() + " submitted.\n"
+                    + "Status: " + ticket.getStatus() + "\n"
+                    + "Due: " + Dates.format(ticket.getDueAt()) + "\n\n"
+                    + "You can track it in My Tickets.", "Ticket submitted", JOptionPane.INFORMATION_MESSAGE);
         } catch (HelpdeskException e) {
             JOptionPane.showMessageDialog(this, e.getMessage(), "Missing information", JOptionPane.WARNING_MESSAGE);
         }

@@ -7,6 +7,8 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 
 public class TicketsPanel extends JPanel {
@@ -15,8 +17,12 @@ public class TicketsPanel extends JPanel {
     private static final String[] COLUMNS =
             {"ID", "Category", "Device", "Description", "Priority", "Status", "Assigned to", "Due"};
 
+    private final List<Ticket> tickets;
+    private final JTable table;
+
     public TicketsPanel(String title, List<Ticket> tickets, Mode mode) {
         super(new BorderLayout());
+        this.tickets = tickets;
 
         DefaultTableModel model = new DefaultTableModel(COLUMNS, 0) {
             @Override
@@ -31,7 +37,14 @@ public class TicketsPanel extends JPanel {
                     (t.isOverdue() ? "OVERDUE " : "") + Dates.format(t.getDueAt())});
         }
 
-        JTable table = new JTable(model);
+        table = new JTable(model);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) showDetails();
+            }
+        });
         table.setRowHeight(28);
         table.setFont(Theme.BODY);
         table.getTableHeader().setFont(Theme.HEADING.deriveFont(13f));
@@ -53,14 +66,14 @@ public class TicketsPanel extends JPanel {
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 12));
         actions.setOpaque(false);
         switch (mode) {
-            case REPORTER -> addAction(actions, "View Details");
+            case REPORTER -> addAction(actions, "View Details", this::showDetails);
             case TECHNICIAN -> {
-                addAction(actions, "Update Status");
-                addAction(actions, "Add Repair Note");
+                addAction(actions, "Update Status", null);
+                addAction(actions, "Add Repair Note", null);
             }
             case ADMIN -> {
-                addAction(actions, "Assign Technician");
-                addAction(actions, "View Details");
+                addAction(actions, "Assign Technician", null);
+                addAction(actions, "View Details", this::showDetails);
             }
         }
 
@@ -73,9 +86,26 @@ public class TicketsPanel extends JPanel {
         add(Theme.page(title, body), BorderLayout.CENTER);
     }
 
-    private void addAction(JPanel actions, String label) {
+    private Ticket getSelectedTicket() {
+        int row = table.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Select a ticket first.");
+            return null;
+        }
+        return tickets.get(table.convertRowIndexToModel(row));
+    }
+
+    private void showDetails() {
+        Ticket ticket = getSelectedTicket();
+        if (ticket != null) new TicketDetailsDialog(SwingUtilities.getWindowAncestor(this), ticket).setVisible(true);
+    }
+
+    private void addAction(JPanel actions, String label, Runnable action) {
         JButton button = Theme.primaryButton(label);
-        button.addActionListener(e -> Theme.comingSoon(this, label));
+        button.addActionListener(e -> {
+            if (action == null) Theme.comingSoon(this, label);
+            else action.run();
+        });
         actions.add(button);
         actions.add(Box.createHorizontalStrut(8));
     }

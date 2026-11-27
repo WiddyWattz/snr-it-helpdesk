@@ -1,10 +1,9 @@
 package snr;
 
+import javax.swing.*;
 import snr.data.DataStore;
 import snr.ui.AppContext;
 import snr.ui.LoginFrame;
-
-import javax.swing.*;
 
 public class Main {
     public static void main(String[] args) {
