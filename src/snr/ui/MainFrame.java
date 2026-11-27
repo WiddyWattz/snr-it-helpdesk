@@ -52,6 +52,7 @@ public class MainFrame extends JFrame {
             addNav(sidebar, "All Tickets", () -> new TicketsPanel(app, user, "All Tickets",
                     () -> app.tickets().getTicketsFor(user), TicketsPanel.Mode.ADMIN));
             addNav(sidebar, "Devices", () -> new DevicesPanel(app, user));
+            addNav(sidebar, "Users", () -> new UsersPanel(app, user));
         } else {
             addNav(sidebar, "Assigned Tickets", () -> new TicketsPanel(app, user, "Assigned Tickets",
                     () -> app.tickets().getTicketsFor(user), TicketsPanel.Mode.TECHNICIAN));

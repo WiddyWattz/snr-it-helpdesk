@@ -27,6 +27,7 @@ public class DataStore {
         users.clear();
         for (Map<String, Object> r : userRows) {
             User u = toUser(r);
+            u.setActive(!Boolean.FALSE.equals(r.get("active")));
             users.put(u.getUsername(), u);
         }
         devices.clear();
@@ -59,12 +60,31 @@ public class DataStore {
     public List<Device> getAllDevices() { return new ArrayList<>(devices.values()); }
     public List<Ticket> getAllTickets() { return Collections.unmodifiableList(tickets); }
 
+    public List<User> getAllUsers() { return new ArrayList<>(users.values()); }
+
     public List<Technician> getTechnicians() {
         List<Technician> list = new ArrayList<>();
         for (User u : users.values()) {
-            if (u instanceof Technician) list.add((Technician) u);
+            if (u instanceof Technician && u.isActive()) list.add((Technician) u);
         }
         return list;
+    }
+
+    public void insertUser(User user, String password) throws HelpdeskException {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("username", user.getUsername());
+        row.put("password", password);
+        row.put("full_name", user.getFullName());
+        row.put("role", roleCode(user));
+        row.put("active", user.isActive());
+        write(() -> db.insert("app_user", row));
+        users.put(user.getUsername(), user);
+    }
+
+    public void updateUser(User user) throws HelpdeskException {
+        Map<String, Object> changes = new LinkedHashMap<>();
+        changes.put("active", user.isActive());
+        write(() -> { db.update("app_user", "username", user.getUsername(), changes); return null; });
     }
 
     public Ticket insertTicket(Category category, Priority priority, Device device, Reporter reporter,
@@ -138,6 +158,12 @@ public class DataStore {
         row.put("location", d.getLocation());
         row.put("condition", d.getCondition());
         return row;
+    }
+
+    private static String roleCode(User user) {
+        if (user instanceof Technician) return "TECHNICIAN";
+        if (user instanceof ITAdmin) return "ADMIN";
+        return "REPORTER";
     }
 
     private User toUser(Map<String, Object> r) {

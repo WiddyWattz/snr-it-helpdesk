@@ -25,7 +25,7 @@ Java Swing desktop app. CSIT228 · Group SnR · G01
 - **Login** – opens the screens for the user's role.
 - **Reporter** – Submit Ticket, My Tickets.
 - **Technician** – Assigned Tickets.
-- **IT Admin** – Dashboard (counts + overdue tickets), All Tickets, Devices.
+- **IT Admin** – Dashboard, Unassigned, All Tickets, Devices, Users (add and deactivate accounts).
 
 ## Structure
 ```
@@ -52,7 +52,8 @@ create table app_user (
     username   text primary key,
     password   text not null,
     full_name  text not null,
-    role       text not null check (role in ('REPORTER', 'TECHNICIAN', 'ADMIN'))
+    role       text not null check (role in ('REPORTER', 'TECHNICIAN', 'ADMIN')),
+    active     boolean not null default true
 );
 
 create table device (
@@ -85,18 +86,17 @@ create table repair_note (
 );
 
 -- The desktop app uses the project's public key, so allow it to read and write these tables.
-grant select on app_user to anon;
-grant select, insert, update on device, ticket, repair_note to anon;
+grant select, insert, update on app_user, device, ticket, repair_note to anon;
 alter table app_user enable row level security;
 alter table device enable row level security;
 alter table ticket enable row level security;
 alter table repair_note enable row level security;
-create policy "app access" on app_user for select using (true);
+create policy "app access" on app_user for all using (true) with check (true);
 create policy "app access" on device for all using (true) with check (true);
 create policy "app access" on ticket for all using (true) with check (true);
 create policy "app access" on repair_note for all using (true) with check (true);
 
-insert into app_user values
+insert into app_user (username, password, full_name, role) values
     ('ana', 'ana123', 'Ana Reyes', 'REPORTER'),
     ('santos', 'santos123', 'Prof. Santos', 'REPORTER'),
     ('carlo', 'tech123', 'Carlo Lim', 'TECHNICIAN'),
