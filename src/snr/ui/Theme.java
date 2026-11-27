@@ -216,12 +216,18 @@ public final class Theme {
         private final String text;
         private final Color color;
         private final Color background;
+        private int inset = 12;
 
         public Pill(String text, Color color, Color background) {
             this.text = text;
             this.color = color;
             this.background = background;
             setFont(LABEL);
+        }
+
+        public Pill inset(int inset) {
+            this.inset = inset;
+            return this;
         }
 
         @Override
@@ -232,7 +238,7 @@ public final class Theme {
             g2.setColor(background);
             g2.fillRect(0, 0, getWidth(), getHeight());
             FontMetrics fm = g2.getFontMetrics(getFont());
-            int w = fm.stringWidth(text) + 18, h = 22, x = 12, y = (getHeight() - h) / 2;
+            int w = fm.stringWidth(text) + 18, h = 22, x = inset, y = (getHeight() - h) / 2;
             g2.setColor(blend(color, background, 0.22));
             g2.fillRoundRect(x, y, w, h, h, h);
             g2.setColor(color);
@@ -243,7 +249,7 @@ public final class Theme {
 
         @Override
         public Dimension getPreferredSize() {
-            return new Dimension(getFontMetrics(getFont()).stringWidth(text) + 30, 26);
+            return new Dimension(getFontMetrics(getFont()).stringWidth(text) + 18 + inset, 26);
         }
     }
 

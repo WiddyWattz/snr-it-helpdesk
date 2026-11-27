@@ -3,6 +3,7 @@ package snr.service;
 import snr.data.DataStore;
 import snr.model.*;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -17,6 +18,16 @@ public class UserService {
         List<User> list = store.getAllUsers();
         list.sort(Comparator.comparing(User::getRole).thenComparing(User::getFullName));
         return list;
+    }
+
+    // The IT team: admins first, then technicians. Store staff are not included.
+    public List<User> getTeam() {
+        List<User> team = new ArrayList<>();
+        for (User u : getAllUsers()) {
+            if (u instanceof ITAdmin || u instanceof Technician) team.add(u);
+        }
+        team.sort(Comparator.comparing((User u) -> u instanceof Technician).thenComparing(User::getFullName));
+        return team;
     }
 
     public User addUser(String username, String fullName, String role, String password) throws HelpdeskException {

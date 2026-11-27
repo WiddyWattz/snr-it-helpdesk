@@ -55,6 +55,7 @@ public class MainFrame extends JFrame {
                             () -> app.tickets().getTicketsFor(user), TicketsPanel.Mode.ADMIN));
             section(nav, "MANAGEMENT");
             addNav(nav, "Devices", () -> app.devices().getActiveDevices().size(), () -> new DevicesPanel(app, user));
+            addNav(nav, "Team", () -> app.tickets().getTechnicians().size(), () -> new TeamPanel(app));
             addNav(nav, "Users", null, () -> new UsersPanel(app, user));
         } else {
             section(nav, "NAVIGATION");

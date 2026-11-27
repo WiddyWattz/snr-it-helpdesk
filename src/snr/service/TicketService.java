@@ -57,6 +57,23 @@ public class TicketService {
         return count;
     }
 
+    public int countResolvedTickets(Technician technician) {
+        int count = 0;
+        for (Ticket t : store.getAllTickets()) {
+            if (technician.equals(t.getAssignee()) && (t.getStatus() == Status.RESOLVED
+                    || t.getStatus() == Status.CLOSED)) count++;
+        }
+        return count;
+    }
+
+    public int countOverdueTickets(Technician technician) {
+        int count = 0;
+        for (Ticket t : store.getAllTickets()) {
+            if (technician.equals(t.getAssignee()) && t.isOverdue()) count++;
+        }
+        return count;
+    }
+
     public void assign(Ticket ticket, Technician technician) throws HelpdeskException {
         if (technician == null) throw new HelpdeskException("Choose a technician.");
         if (ticket.getStatus() == Status.RESOLVED || ticket.getStatus() == Status.CLOSED) {
