@@ -27,6 +27,9 @@ Java Swing desktop app. CSIT228 · Group SnR · G01
 - **Technician** – Assigned Tickets.
 - **IT Admin** – Dashboard, Unassigned, All Tickets, Devices, Users (add and deactivate accounts).
 
+Every ticket table has a search box (ID, description, device, category, status, people) and
+status / category / priority filters.
+
 ## Structure
 ```
 src/snr/

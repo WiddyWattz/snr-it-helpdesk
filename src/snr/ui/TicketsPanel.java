@@ -1,6 +1,8 @@
 package snr.ui;
 
+import snr.model.Category;
 import snr.model.HelpdeskException;
+import snr.model.Priority;
 import snr.model.Status;
 import snr.model.Technician;
 import snr.model.Ticket;
@@ -8,6 +10,8 @@ import snr.model.User;
 import snr.util.Dates;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -28,6 +32,12 @@ public class TicketsPanel extends JPanel {
     private final Supplier<List<Ticket>> source;
     private final DefaultTableModel model;
     private final JTable table;
+    private final JTextField searchField = new JTextField(12);
+    private final JComboBox<Object> statusFilter = filterBox("Any status", Status.values());
+    private final JComboBox<Object> categoryFilter = filterBox("Any category", Category.values());
+    private final JComboBox<Object> priorityFilter = filterBox("Any priority", Priority.values());
+    private final JLabel countLabel = new JLabel();
+    private List<Ticket> allTickets = new ArrayList<>();
     private List<Ticket> tickets = new ArrayList<>();
 
     public TicketsPanel(AppContext app, User user, String title, Supplier<List<Ticket>> source, Mode mode) {
@@ -91,6 +101,7 @@ public class TicketsPanel extends JPanel {
 
         JPanel body = new JPanel(new BorderLayout());
         body.setOpaque(false);
+        body.add(filterBar(), BorderLayout.NORTH);
         JScrollPane scroll = new JScrollPane(table);
         scroll.getViewport().setBackground(Theme.CARD);
         body.add(scroll, BorderLayout.CENTER);
@@ -100,7 +111,20 @@ public class TicketsPanel extends JPanel {
     }
 
     public void refresh() {
-        tickets = source.get();
+        allTickets = source.get();
+        applyFilters();
+    }
+
+    private void applyFilters() {
+        String text = searchField.getText().trim().toLowerCase();
+        tickets = new ArrayList<>();
+        for (Ticket t : allTickets) {
+            if (matches(statusFilter, t.getStatus()) && matches(categoryFilter, t.getCategory())
+                    && matches(priorityFilter, t.getPriority()) && matchesText(t, text)) {
+                tickets.add(t);
+            }
+        }
+        countLabel.setText("Showing " + tickets.size() + " of " + allTickets.size());
         model.setRowCount(0);
         for (Ticket t : tickets) {
             model.addRow(new Object[]{
@@ -108,6 +132,55 @@ public class TicketsPanel extends JPanel {
                     t.getStatus(), t.getAssignee() == null ? "Unassigned" : t.getAssignee(),
                     (t.isOverdue() ? "OVERDUE " : "") + Dates.format(t.getDueAt())});
         }
+    }
+
+    private static boolean matches(JComboBox<Object> filter, Object value) {
+        return filter.getSelectedIndex() == 0 || filter.getSelectedItem() == value;
+    }
+
+    private static boolean matchesText(Ticket t, String text) {
+        if (text.isEmpty()) return true;
+        String haystack = ("#" + t.getId() + " " + t.getDescription() + " " + t.getDevice() + " "
+                + t.getCategory() + " " + t.getStatus() + " " + t.getPriority() + " "
+                + t.getReporter() + " " + (t.getAssignee() == null ? "unassigned" : t.getAssignee())).toLowerCase();
+        return haystack.contains(text);
+    }
+
+    private static JComboBox<Object> filterBox(String allLabel, Object[] values) {
+        JComboBox<Object> box = new JComboBox<>();
+        box.addItem(allLabel);
+        for (Object v : values) box.addItem(v);
+        return box;
+    }
+
+    private JPanel filterBar() {
+        searchField.setToolTipText("Search by ID, description, device, category, status or person");
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { applyFilters(); }
+            public void removeUpdate(DocumentEvent e) { applyFilters(); }
+            public void changedUpdate(DocumentEvent e) { applyFilters(); }
+        });
+        JButton clear = new JButton("Clear");
+        clear.addActionListener(e -> {
+            searchField.setText("");
+            statusFilter.setSelectedIndex(0);
+            categoryFilter.setSelectedIndex(0);
+            priorityFilter.setSelectedIndex(0);
+        });
+        countLabel.setForeground(Theme.MUTED);
+
+        JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        bar.setOpaque(false);
+        bar.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+        bar.add(new JLabel("Search"));
+        bar.add(searchField);
+        for (JComboBox<Object> box : List.of(statusFilter, categoryFilter, priorityFilter)) {
+            box.addActionListener(e -> applyFilters());
+            bar.add(box);
+        }
+        bar.add(clear);
+        bar.add(countLabel);
+        return bar;
     }
 
     private Ticket getSelectedTicket() {
