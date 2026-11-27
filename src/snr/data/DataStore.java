@@ -81,6 +81,15 @@ public class DataStore {
         users.put(user.getUsername(), user);
     }
 
+    public void updatePassword(User user, String password) throws HelpdeskException {
+        Map<String, Object> changes = new LinkedHashMap<>();
+        changes.put("password", password);
+        write(() -> { db.update("app_user", "username", user.getUsername(), changes); return null; });
+        user.setPassword(password);
+        User cached = users.get(user.getUsername());
+        if (cached != null) cached.setPassword(password);
+    }
+
     public void updateUser(User user) throws HelpdeskException {
         Map<String, Object> changes = new LinkedHashMap<>();
         changes.put("active", user.isActive());

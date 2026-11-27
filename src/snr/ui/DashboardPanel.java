@@ -77,7 +77,7 @@ public class DashboardPanel extends JPanel {
     }
 
     private JComponent hero(DashboardSummary s) {
-        JLabel live = new JLabel("<html><span style='color:#22C55E;font-size:14px'>●</span>&nbsp; <b>Store IT Live</b></html>");
+        JLabel live = new JLabel("<html><span style='color:" + Theme.hex(Theme.SUCCESS) + ";font-size:14px'>●</span>&nbsp; <b>Store IT Live</b></html>");
         live.setFont(Theme.HEADING.deriveFont(16f));
         JLabel health = new JLabel(s.getOnTimePercent() + "% on time");
         health.setFont(Theme.SMALL);
@@ -199,7 +199,7 @@ public class DashboardPanel extends JPanel {
         List<Map.Entry<Device, Integer>> top = s.getTopDevices();
         for (int i = 0; i < Math.min(TOP_DEVICES, top.size()); i++) {
             Device d = top.get(i).getKey();
-            JLabel name = new JLabel("<html><b>" + d.getCode() + "</b> &nbsp;<span style='color:#8B92A3'>"
+            JLabel name = new JLabel("<html><b>" + d.getCode() + "</b> &nbsp;<span style='color:" + Theme.hex(Theme.MUTED) + "'>"
                     + d.getType() + " · " + d.getLocation() + "</span></html>");
             name.setFont(Theme.BODY);
             int n = top.get(i).getValue();
@@ -233,7 +233,7 @@ public class DashboardPanel extends JPanel {
             };
             String hex = String.format("#%06X", c.getRGB() & 0xFFFFFF);
             JLabel text = new JLabel("<html><span style='color:" + hex + "'>●</span>&nbsp; " + escape(a.text())
-                    + "<br><span style='color:#8B92A3;font-family:monospace'>&nbsp;&nbsp;&nbsp;&nbsp;"
+                    + "<br><span style='color:" + Theme.hex(Theme.MUTED) + ";font-family:monospace'>&nbsp;&nbsp;&nbsp;&nbsp;"
                     + String.format("TKT-%04d", a.ticketId()) + " · " + Dates.format(a.time()) + "</span></html>");
             text.setFont(Theme.BODY);
             JPanel item = new JPanel(new BorderLayout(10, 0));

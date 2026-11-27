@@ -14,24 +14,102 @@ import javax.swing.plaf.metal.MetalLookAndFeel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
+import java.util.prefs.Preferences;
 
 public final class Theme {
-    public static final Color BACKGROUND = new Color(0x0B0D12);
-    public static final Color SIDEBAR = new Color(0x0F1117);
-    public static final Color SIDEBAR_ACTIVE = new Color(0x1E2230);
-    public static final Color CARD = new Color(0x14171F);
-    public static final Color CARD_ALT = new Color(0x1A1E28);
-    public static final Color BORDER = new Color(0x262B37);
-    public static final Color FIELD = new Color(0x1A1E28);
-    public static final Color PRIMARY = new Color(0x6366F1);
-    public static final Color TEXT = new Color(0xE6E8EE);
-    public static final Color MUTED = new Color(0x8B92A3);
-    public static final Color DANGER = new Color(0xEF4444);
-    public static final Color SUCCESS = new Color(0x22C55E);
-    public static final Color WARNING = new Color(0xEAB308);
-    public static final Color INFO = new Color(0x3B82F6);
-    public static final Color PURPLE = new Color(0xA78BFA);
-    public static final Color GRAY = new Color(0x6B7280);
+    public static Color BACKGROUND;
+    public static Color SIDEBAR;
+    public static Color SIDEBAR_ACTIVE;
+    public static Color CARD;
+    public static Color CARD_ALT;
+    public static Color BORDER;
+    public static Color FIELD;
+    public static Color PRIMARY;
+    public static Color TEXT;
+    public static Color MUTED;
+    public static Color DANGER;
+    public static Color SUCCESS;
+    public static Color WARNING;
+    public static Color INFO;
+    public static Color PURPLE;
+    public static Color GRAY;
+    public static Color SELECTION;
+    public static Color THUMB;
+    public static Color AVATAR;
+    public static Color PRIMARY_SOFT;
+    public static Color PRIMARY_FAINT;
+    public static Color DISABLED;
+
+    private static final Preferences PREFS = Preferences.userNodeForPackage(Theme.class);
+    private static boolean dark = PREFS.getBoolean("darkTheme", true);
+
+    static {
+        applyPalette();
+    }
+
+    public static boolean isDark() { return dark; }
+
+    // Switch palette, remember the choice on this computer, and re-install the look and feel.
+    public static void setDark(boolean value) {
+        dark = value;
+        PREFS.putBoolean("darkTheme", value);
+        applyPalette();
+        install();
+    }
+
+    private static void applyPalette() {
+        if (dark) {
+            BACKGROUND = new Color(0x0B0D12);
+            SIDEBAR = new Color(0x0F1117);
+            SIDEBAR_ACTIVE = new Color(0x1E2230);
+            CARD = new Color(0x14171F);
+            CARD_ALT = new Color(0x1A1E28);
+            BORDER = new Color(0x262B37);
+            FIELD = new Color(0x1A1E28);
+            PRIMARY = new Color(0x6366F1);
+            TEXT = new Color(0xE6E8EE);
+            MUTED = new Color(0x8B92A3);
+            DANGER = new Color(0xEF4444);
+            SUCCESS = new Color(0x22C55E);
+            WARNING = new Color(0xEAB308);
+            INFO = new Color(0x3B82F6);
+            PURPLE = new Color(0xA78BFA);
+            GRAY = new Color(0x6B7280);
+            SELECTION = new Color(0x252A3D);
+            THUMB = new Color(0x2D3240);
+            AVATAR = new Color(0x2A2F3E);
+            PRIMARY_SOFT = new Color(0x3B3F8F);
+            PRIMARY_FAINT = new Color(0x2A2F45);
+            DISABLED = new Color(0x3A404D);
+        } else {
+            BACKGROUND = new Color(0xF4F5F8);
+            SIDEBAR = new Color(0xFFFFFF);
+            SIDEBAR_ACTIVE = new Color(0xECEEF6);
+            CARD = new Color(0xFFFFFF);
+            CARD_ALT = new Color(0xF4F5F8);
+            BORDER = new Color(0xE2E5EB);
+            FIELD = new Color(0xFFFFFF);
+            PRIMARY = new Color(0x6366F1);
+            TEXT = new Color(0x1A1D24);
+            MUTED = new Color(0x6B7280);
+            DANGER = new Color(0xDC2626);
+            SUCCESS = new Color(0x16A34A);
+            WARNING = new Color(0xCA8A04);
+            INFO = new Color(0x2563EB);
+            PURPLE = new Color(0x7C3AED);
+            GRAY = new Color(0x6B7280);
+            SELECTION = new Color(0xE8EAFB);
+            THUMB = new Color(0xC9CDD6);
+            AVATAR = new Color(0xE5E7EB);
+            PRIMARY_SOFT = new Color(0xA5A7F5);
+            PRIMARY_FAINT = new Color(0xE0E1FB);
+            DISABLED = new Color(0xC4C8D0);
+        }
+    }
+
+    public static String hex(Color c) {
+        return String.format("#%06X", c.getRGB() & 0xFFFFFF);
+    }
 
     public static final Font TITLE = new Font(Font.SANS_SERIF, Font.BOLD, 24);
     public static final Font HEADING = new Font(Font.SANS_SERIF, Font.BOLD, 14);
@@ -48,10 +126,10 @@ public final class Theme {
     public static void install() {
         MetalLookAndFeel.setCurrentTheme(new DefaultMetalTheme() {
             @Override protected ColorUIResource getPrimary1() { return new ColorUIResource(PRIMARY); }
-            @Override protected ColorUIResource getPrimary2() { return new ColorUIResource(0x3B3F8F); }
-            @Override protected ColorUIResource getPrimary3() { return new ColorUIResource(0x2A2F45); }
+            @Override protected ColorUIResource getPrimary2() { return new ColorUIResource(PRIMARY_SOFT); }
+            @Override protected ColorUIResource getPrimary3() { return new ColorUIResource(PRIMARY_FAINT); }
             @Override protected ColorUIResource getSecondary1() { return new ColorUIResource(BORDER); }
-            @Override protected ColorUIResource getSecondary2() { return new ColorUIResource(0x3A404D); }
+            @Override protected ColorUIResource getSecondary2() { return new ColorUIResource(DISABLED); }
             @Override protected ColorUIResource getSecondary3() { return new ColorUIResource(CARD); }
             @Override protected ColorUIResource getBlack() { return new ColorUIResource(TEXT); }
             @Override protected ColorUIResource getWhite() { return new ColorUIResource(FIELD); }
@@ -72,7 +150,7 @@ public final class Theme {
         UIManager.put("Label.foreground", TEXT);
         UIManager.put("Table.background", CARD);
         UIManager.put("Table.foreground", TEXT);
-        UIManager.put("Table.selectionBackground", new Color(0x252A3D));
+        UIManager.put("Table.selectionBackground", SELECTION);
         UIManager.put("Table.selectionForeground", TEXT);
         UIManager.put("ScrollPane.border", BorderFactory.createEmptyBorder());
         UIManager.put("ScrollBarUI", ThinScrollBarUI.class.getName());
@@ -272,7 +350,7 @@ public final class Theme {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-            g2.setColor(new Color(0x2A2F3E));
+            g2.setColor(AVATAR);
             g2.fillOval(x, y, size, size);
             g2.setFont(new Font(Font.SANS_SERIF, Font.BOLD, Math.max(9, size / 3)));
             FontMetrics fm = g2.getFontMetrics();
@@ -334,7 +412,7 @@ public final class Theme {
 
         @Override
         protected void configureScrollBarColors() {
-            thumbColor = new Color(0x2D3240);
+            thumbColor = THUMB;
             trackColor = BACKGROUND;
         }
 
@@ -361,7 +439,7 @@ public final class Theme {
             if (r.isEmpty()) return;
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(isThumbRollover() ? new Color(0x3D4355) : thumbColor);
+            g2.setColor(isThumbRollover() ? MUTED : thumbColor);
             g2.fillRoundRect(r.x + 2, r.y + 2, r.width - 4, r.height - 4, 8, 8);
             g2.dispose();
         }

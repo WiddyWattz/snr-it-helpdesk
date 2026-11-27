@@ -41,7 +41,7 @@ public class TeamPanel extends JPanel {
     }
 
     private JComponent memberCard(User u) {
-        JLabel name = new JLabel("<html><b>" + u.getFullName() + "</b><br><span style='color:#8B92A3'>@"
+        JLabel name = new JLabel("<html><b>" + u.getFullName() + "</b><br><span style='color:" + Theme.hex(Theme.MUTED) + "'>@"
                 + u.getUsername() + "</span></html>");
         name.setFont(Theme.BODY.deriveFont(14f));
         name.setIcon(new Theme.Avatar(u.getFullName(), 44));
@@ -89,7 +89,7 @@ public class TeamPanel extends JPanel {
     }
 
     private JComponent adminNote() {
-        JLabel note = new JLabel("<html><span style='color:#8B92A3'>Assigns tickets, manages devices, "
+        JLabel note = new JLabel("<html><span style='color:" + Theme.hex(Theme.MUTED) + "'>Assigns tickets, manages devices, "
                 + "user accounts and the IT team.</span></html>");
         note.setFont(Theme.BODY);
         note.setVerticalAlignment(SwingConstants.TOP);

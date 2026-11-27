@@ -50,6 +50,16 @@ public class UserService {
         return user;
     }
 
+    public void changePassword(User user, String current, String newPassword, String confirm) throws HelpdeskException {
+        if (!user.checkPassword(current)) throw new HelpdeskException("Current password is incorrect.");
+        if (newPassword == null || newPassword.length() < 6) {
+            throw new HelpdeskException("New password must be at least 6 characters.");
+        }
+        if (!newPassword.equals(confirm)) throw new HelpdeskException("New passwords do not match.");
+        if (newPassword.equals(current)) throw new HelpdeskException("New password must be different from the current one.");
+        store.updatePassword(user, newPassword);
+    }
+
     public void setActive(User user, User admin, boolean active) throws HelpdeskException {
         if (user.equals(admin)) throw new HelpdeskException("You cannot deactivate your own account.");
         if (!active && user instanceof Technician) {

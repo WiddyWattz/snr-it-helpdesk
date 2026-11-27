@@ -2,7 +2,7 @@ package snr.model;
 
 public abstract class User {
     private final String username;
-    private final String password;
+    private String password;
     private final String fullName;
     private boolean active = true;
 
@@ -11,6 +11,8 @@ public abstract class User {
         this.password = password;
         this.fullName = fullName;
     }
+
+    public void setPassword(String password) { this.password = password; }
 
     public boolean checkPassword(String attempt) {
         return password.equals(attempt);

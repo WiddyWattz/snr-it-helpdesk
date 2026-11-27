@@ -122,7 +122,7 @@ public class MainFrame extends JFrame {
     }
 
     private JComponent userCard() {
-        JLabel who = new JLabel("<html><b>" + user.getFullName() + "</b><br><span style='color:#8B92A3'>"
+        JLabel who = new JLabel("<html><b>" + user.getFullName() + "</b><br><span style='color:" + Theme.hex(Theme.MUTED) + "'>"
                 + user.getRole() + " · @" + user.getUsername() + "</span></html>");
         who.setIcon(new Theme.Avatar(user.getFullName(), 32));
         who.setIconTextGap(10);
@@ -136,6 +136,14 @@ public class MainFrame extends JFrame {
 
         JPanel card = new JPanel(new BorderLayout(0, 10));
         card.setOpaque(false);
+        who.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        who.setToolTipText("Open settings");
+        who.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                showSettings();
+            }
+        });
         card.setBorder(BorderFactory.createCompoundBorder(new MatteBorder(1, 0, 0, 0, Theme.BORDER),
                 new EmptyBorder(12, 14, 14, 14)));
         card.add(who, BorderLayout.CENTER);
@@ -145,7 +153,7 @@ public class MainFrame extends JFrame {
 
     private JComponent topBar() {
         crumb.setFont(Theme.BODY);
-        JLabel live = new JLabel("<html><span style='color:#22C55E'>●</span> Live · "
+        JLabel live = new JLabel("<html><span style='color:" + Theme.hex(Theme.SUCCESS) + "'>●</span> Live · "
                 + LocalDate.now().format(DateTimeFormatter.ofPattern("EEE, MMM d")) + "</html>");
         live.setForeground(Theme.MUTED);
         live.setFont(Theme.SMALL);
@@ -170,22 +178,38 @@ public class MainFrame extends JFrame {
 
     private void addNav(JPanel nav, String label, Supplier<Integer> badge, Supplier<JComponent> page) {
         NavItem item = new NavItem(label, badge);
-        item.addActionListener(e -> {
-            try {
-                app.reload();
-            } catch (HelpdeskException ex) {
-                JOptionPane.showMessageDialog(this, ex.getMessage(), "Could not load data", JOptionPane.WARNING_MESSAGE);
-            }
-            navItems.forEach(n -> n.setActive(n == item));
-            navItems.forEach(NavItem::updateBadge);
-            crumb.setText("<html><span style='color:#8B92A3'>SnR Warehouse Club &nbsp;›&nbsp;</span> " + label + "</html>");
-            content.removeAll();
-            content.add(page.get(), BorderLayout.CENTER);
-            content.revalidate();
-            content.repaint();
-        });
+        item.addActionListener(e -> showPage(label, page, item));
         navItems.add(item);
         nav.add(item);
+    }
+
+    private void showPage(String label, Supplier<JComponent> page, NavItem active) {
+        try {
+            app.reload();
+        } catch (HelpdeskException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Could not load data", JOptionPane.WARNING_MESSAGE);
+        }
+        navItems.forEach(n -> n.setActive(n == active));
+        navItems.forEach(NavItem::updateBadge);
+        crumb.setText("<html><span style='color:" + Theme.hex(Theme.MUTED) + "'>SnR Warehouse Club &nbsp;›&nbsp;</span> " + label + "</html>");
+        content.removeAll();
+        content.add(page.get(), BorderLayout.CENTER);
+        content.revalidate();
+        content.repaint();
+    }
+
+    public void showSettings() {
+        showPage("Settings", () -> new SettingsPanel(app, user, this), null);
+    }
+
+    // Rebuild the window with the new colors and return to Settings.
+    public void switchTheme(boolean dark) {
+        Theme.setDark(dark);
+        MainFrame fresh = new MainFrame(app, user);
+        fresh.setBounds(getBounds());
+        fresh.showSettings();
+        fresh.setVisible(true);
+        dispose();
     }
 
     // Sidebar link: rounded highlight when active, optional count badge on the right.
