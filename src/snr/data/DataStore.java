@@ -1,25 +1,61 @@
 package snr.data;
 
 import snr.model.*;
+import snr.util.Dates;
 
 import java.time.LocalDateTime;
 import java.util.*;
 
-// In-memory for now, replace with Supabase.
+// Keeps a copy of the Supabase data in memory; reload() fetches the latest rows.
 public class DataStore {
+    private final SupabaseClient db;
     private final Map<String, User> users = new LinkedHashMap<>();
     private final Map<String, Device> devices = new LinkedHashMap<>();
     private final List<Ticket> tickets = new ArrayList<>();
-    private int nextTicketId = 1;
 
-    public DataStore() {
-        seedUsers();
-        seedDevices();
-        seedTickets();
+    public DataStore() throws HelpdeskException {
+        db = new SupabaseClient();
+        reload();
+    }
+
+    public void reload() throws HelpdeskException {
+        List<Map<String, Object>> userRows = db.select("app_user", "select=*&order=username");
+        List<Map<String, Object>> deviceRows = db.select("device", "select=*&order=code");
+        List<Map<String, Object>> ticketRows = db.select("ticket", "select=*&order=id");
+        List<Map<String, Object>> noteRows = db.select("repair_note", "select=*&order=created_at");
+
+        users.clear();
+        for (Map<String, Object> r : userRows) {
+            User u = toUser(r);
+            users.put(u.getUsername(), u);
+        }
+        devices.clear();
+        for (Map<String, Object> r : deviceRows) {
+            Device d = new Device(str(r, "code"), DeviceType.valueOf(str(r, "type")), str(r, "location"), str(r, "condition"));
+            devices.put(d.getCode(), d);
+        }
+        Map<Integer, Ticket> byId = new LinkedHashMap<>();
+        for (Map<String, Object> r : ticketRows) {
+            Ticket t = Ticket.create(Category.valueOf(str(r, "category")), num(r, "id"), str(r, "description"),
+                    Priority.valueOf(str(r, "priority")), devices.get(str(r, "device_code")),
+                    (Reporter) users.get(str(r, "reporter")), Dates.fromDb(r.get("created_at")));
+            t.restore(Status.valueOf(str(r, "status")), (Technician) users.get(str(r, "assignee")),
+                    Dates.fromDb(r.get("assigned_at")), Dates.fromDb(r.get("resolved_at")));
+            byId.put(t.getId(), t);
+        }
+        for (Map<String, Object> r : noteRows) {
+            Ticket t = byId.get(num(r, "ticket_id"));
+            if (t != null) {
+                t.addNote(new RepairNote((Technician) users.get(str(r, "technician")), str(r, "note"),
+                        Dates.fromDb(r.get("created_at"))));
+            }
+        }
+        tickets.clear();
+        tickets.addAll(byId.values());
     }
 
     public User findUser(String username) { return users.get(username == null ? null : username.trim().toLowerCase()); }
-    public Device findDevice(String code) { return devices.get(normalize(code)); }
+    public Device findDevice(String code) { return devices.get(code == null ? null : code.trim().toUpperCase()); }
     public List<Device> getAllDevices() { return new ArrayList<>(devices.values()); }
     public List<Ticket> getAllTickets() { return Collections.unmodifiableList(tickets); }
 
@@ -31,61 +67,74 @@ public class DataStore {
         return list;
     }
 
-    public void saveDevice(Device device) { devices.put(normalize(device.getCode()), device); }
-    public void saveTicket(Ticket ticket) { tickets.add(ticket); }
-    public int generateTicketId() { return nextTicketId++; }
+    public Ticket insertTicket(Category category, Priority priority, Device device, Reporter reporter,
+                               String description, LocalDateTime createdAt) throws HelpdeskException {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("category", category.name());
+        row.put("priority", priority.name());
+        row.put("status", Status.OPEN.name());
+        row.put("description", description);
+        row.put("device_code", device.getCode());
+        row.put("reporter", reporter.getUsername());
+        row.put("created_at", Dates.toDb(createdAt));
+        int id = num(db.insert("ticket", row), "id");
 
-    private static String normalize(String key) {
-        return key == null ? null : key.trim().toUpperCase();
+        Ticket ticket = Ticket.create(category, id, description, priority, device, reporter, createdAt);
+        tickets.add(ticket);
+        return ticket;
     }
 
-    private void seedUsers() {
-        addUser(new Reporter("ana", "ana123", "Ana Reyes"));
-        addUser(new Reporter("santos", "santos123", "Prof. Santos"));
-        addUser(new Technician("carlo", "tech123", "Carlo Lim"));
-        addUser(new Technician("jessa", "tech123", "Jessa Uy"));
-        addUser(new ITAdmin("admin", "admin123", "Admin Cruz"));
+    public void updateTicket(Ticket ticket) throws HelpdeskException {
+        Map<String, Object> changes = new LinkedHashMap<>();
+        changes.put("status", ticket.getStatus().name());
+        changes.put("assignee", ticket.getAssignee() == null ? null : ticket.getAssignee().getUsername());
+        changes.put("assigned_at", Dates.toDb(ticket.getAssignedAt()));
+        changes.put("resolved_at", Dates.toDb(ticket.getResolvedAt()));
+        db.update("ticket", "id", ticket.getId(), changes);
     }
 
-    private void addUser(User user) { users.put(user.getUsername(), user); }
-
-    private void seedDevices() {
-        saveDevice(new Device("PC-12", DeviceType.PC, "Lab 3", Device.WORKING));
-        saveDevice(new Device("PC-07", DeviceType.PC, "Lab 3", Device.NEEDS_REPAIR));
-        saveDevice(new Device("PRN-01", DeviceType.PRINTER, "Faculty Room", Device.WORKING));
-        saveDevice(new Device("RTR-02", DeviceType.ROUTER, "2nd Floor", Device.WORKING));
+    public void insertNote(Ticket ticket, RepairNote note) throws HelpdeskException {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("ticket_id", ticket.getId());
+        row.put("technician", note.getTechnician().getUsername());
+        row.put("note", note.getNote());
+        row.put("created_at", Dates.toDb(note.getDateTime()));
+        db.insert("repair_note", row);
     }
 
-    private void seedTickets() {
-        LocalDateTime now = LocalDateTime.now();
-        Reporter ana = (Reporter) users.get("ana");
-        Reporter santos = (Reporter) users.get("santos");
-        Technician carlo = (Technician) users.get("carlo");
-        Technician jessa = (Technician) users.get("jessa");
+    public void insertDevice(Device device) throws HelpdeskException {
+        db.insert("device", deviceRow(device));
+        devices.put(device.getCode(), device);
+    }
 
-        Ticket t1 = new HardwareTicket(generateTicketId(), "PC won't turn on", Priority.HIGH,
-                findDevice("PC-07"), ana, now.minusHours(6));
-        t1.assignTo(carlo, now.minusHours(5));
+    public void updateDevice(Device device) throws HelpdeskException {
+        db.update("device", "code", device.getCode(), deviceRow(device));
+    }
 
-        Ticket t2 = new NetworkTicket(generateTicketId(), "No internet on 2nd floor", Priority.MEDIUM,
-                findDevice("RTR-02"), santos, now.minusHours(3));
-        t2.assignTo(jessa, now.minusHours(2));
+    private Map<String, Object> deviceRow(Device d) {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("code", d.getCode());
+        row.put("type", d.getType().name());
+        row.put("location", d.getLocation());
+        row.put("condition", d.getCondition());
+        return row;
+    }
 
-        Ticket t3 = new SoftwareTicket(generateTicketId(), "NetBeans missing", Priority.LOW,
-                findDevice("PC-12"), ana, now.minusHours(1));
-
-        Ticket t4 = new HardwareTicket(generateTicketId(), "Printer paper jam", Priority.MEDIUM,
-                findDevice("PRN-01"), santos, now.minusDays(2));
-        t4.assignTo(carlo, now.minusDays(2));
-        t4.addNote(new RepairNote(carlo, "Removed jammed paper and cleaned rollers.", now.minusDays(1)));
-
-        try {
-            t2.moveTo(Status.IN_PROGRESS, now.minusHours(2));
-            t4.moveTo(Status.IN_PROGRESS, now.minusDays(2));
-            t4.moveTo(Status.RESOLVED, now.minusDays(1));
-        } catch (InvalidStatusChangeException e) {
-            throw new IllegalStateException("Bad sample data", e);
+    private User toUser(Map<String, Object> r) {
+        String username = str(r, "username"), password = str(r, "password"), name = str(r, "full_name");
+        switch (str(r, "role")) {
+            case "TECHNICIAN": return new Technician(username, password, name);
+            case "ADMIN": return new ITAdmin(username, password, name);
+            default: return new Reporter(username, password, name);
         }
-        tickets.addAll(List.of(t1, t2, t3, t4));
+    }
+
+    private static String str(Map<String, Object> row, String column) {
+        Object v = row.get(column);
+        return v == null ? null : v.toString();
+    }
+
+    private static int num(Map<String, Object> row, String column) {
+        return ((Number) row.get(column)).intValue();
     }
 }

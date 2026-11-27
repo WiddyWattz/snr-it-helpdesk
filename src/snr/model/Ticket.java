@@ -28,6 +28,23 @@ public abstract class Ticket {
         this.createdAt = createdAt;
     }
 
+    public static Ticket create(Category category, int id, String description, Priority priority,
+                                Device device, Reporter reporter, LocalDateTime createdAt) {
+        switch (category) {
+            case HARDWARE: return new HardwareTicket(id, description, priority, device, reporter, createdAt);
+            case SOFTWARE: return new SoftwareTicket(id, description, priority, device, reporter, createdAt);
+            default:       return new NetworkTicket(id, description, priority, device, reporter, createdAt);
+        }
+    }
+
+    // Used when loading a saved ticket from the database.
+    public void restore(Status status, Technician assignee, LocalDateTime assignedAt, LocalDateTime resolvedAt) {
+        this.status = status;
+        this.assignee = assignee;
+        this.assignedAt = assignedAt;
+        this.resolvedAt = resolvedAt;
+    }
+
     public abstract Category getCategory();
 
     public int getSlaHours() { return priority.getSlaHours(); }

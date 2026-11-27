@@ -1,6 +1,7 @@
 package snr.ui;
 
 import snr.model.Device;
+import snr.model.HelpdeskException;
 import snr.model.Status;
 import snr.model.User;
 import snr.service.DashboardSummary;
@@ -24,7 +25,7 @@ public class DashboardPanel extends JPanel {
     private final JLabel overdueCount = new JLabel();
     private final TicketsPanel overduePanel;
     private final DefaultTableModel topDevicesModel;
-    private final Timer timer = new Timer(60_000, e -> refresh());
+    private final Timer timer = new Timer(60_000, e -> reloadAndRefresh());
 
     public DashboardPanel(AppContext app, User user) {
         super(new BorderLayout());
@@ -89,6 +90,15 @@ public class DashboardPanel extends JPanel {
         List<Map.Entry<Device, Integer>> top = summary.getTopDevices();
         for (int i = 0; i < Math.min(TOP_DEVICES, top.size()); i++) {
             topDevicesModel.addRow(new Object[]{top.get(i).getKey(), top.get(i).getValue()});
+        }
+    }
+
+    private void reloadAndRefresh() {
+        try {
+            app.reload();
+            refresh();
+        } catch (HelpdeskException ignored) {
+            // keep showing the last loaded data until the connection is back
         }
     }
 

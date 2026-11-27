@@ -26,5 +26,13 @@ public class Device {
     public boolean isRetired() { return RETIRED.equals(condition); }
 
     @Override
+    public boolean equals(Object o) {
+        return o instanceof Device && ((Device) o).code.equals(code);
+    }
+
+    @Override
+    public int hashCode() { return code.hashCode(); }
+
+    @Override
     public String toString() { return location + " - " + code; }
 }

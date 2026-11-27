@@ -1,5 +1,6 @@
 package snr.ui;
 
+import snr.model.HelpdeskException;
 import snr.model.ITAdmin;
 import snr.model.Reporter;
 import snr.model.User;
@@ -74,6 +75,11 @@ public class MainFrame extends JFrame {
         button.addActionListener(e -> {
             navButtons.forEach(b -> b.setBackground(Theme.SIDEBAR));
             button.setBackground(Theme.SIDEBAR_ACTIVE);
+            try {
+                app.reload();
+            } catch (HelpdeskException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Could not load data", JOptionPane.WARNING_MESSAGE);
+            }
             content.removeAll();
             content.add(page.get(), BorderLayout.CENTER);
             content.revalidate();

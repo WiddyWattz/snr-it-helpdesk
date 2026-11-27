@@ -19,17 +19,7 @@ public class TicketService {
         if (device == null) throw new HelpdeskException("Choose the affected device.");
         if (description == null || description.trim().isEmpty()) throw new HelpdeskException("Describe the problem.");
 
-        int id = store.generateTicketId();
-        LocalDateTime now = LocalDateTime.now();
-        String text = description.trim();
-        Ticket ticket;
-        switch (category) {
-            case HARDWARE: ticket = new HardwareTicket(id, text, priority, device, reporter, now); break;
-            case SOFTWARE: ticket = new SoftwareTicket(id, text, priority, device, reporter, now); break;
-            default:       ticket = new NetworkTicket(id, text, priority, device, reporter, now); break;
-        }
-        store.saveTicket(ticket);
-        return ticket;
+        return store.insertTicket(category, priority, device, reporter, description.trim(), LocalDateTime.now());
     }
 
     // Admin: all, reporter: own, technician: assigned.
@@ -37,8 +27,8 @@ public class TicketService {
         List<Ticket> list = new ArrayList<>();
         for (Ticket t : store.getAllTickets()) {
             if (user instanceof ITAdmin
-                    || t.getReporter() == user
-                    || t.getAssignee() == user) {
+                    || user.equals(t.getReporter())
+                    || user.equals(t.getAssignee())) {
                 list.add(t);
             }
         }
@@ -61,7 +51,7 @@ public class TicketService {
     public int countActiveTickets(Technician technician) {
         int count = 0;
         for (Ticket t : store.getAllTickets()) {
-            if (t.getAssignee() == technician && t.getStatus() != Status.RESOLVED
+            if (technician.equals(t.getAssignee()) && t.getStatus() != Status.RESOLVED
                     && t.getStatus() != Status.CLOSED) count++;
         }
         return count;
@@ -71,6 +61,7 @@ public class TicketService {
         if (technician == null) throw new HelpdeskException("Choose a technician.");
         if (ticket.getStatus() == Status.CLOSED) throw new HelpdeskException("This ticket is already closed.");
         ticket.assignTo(technician, LocalDateTime.now());
+        store.updateTicket(ticket);
     }
 
     public void changeStatus(Ticket ticket, Technician technician, Status next) throws HelpdeskException {
@@ -81,17 +72,20 @@ public class TicketService {
             throw new HelpdeskException("Add a repair note before resolving.");
         }
         ticket.moveTo(next, LocalDateTime.now());
+        store.updateTicket(ticket);
     }
 
     public void addNote(Ticket ticket, Technician technician, String note) throws HelpdeskException {
         checkAssignedTo(ticket, technician);
         if (ticket.getStatus() == Status.CLOSED) throw new HelpdeskException("This ticket is already closed.");
         if (note == null || note.trim().isEmpty()) throw new HelpdeskException("The note is empty.");
-        ticket.addNote(new RepairNote(technician, note.trim(), LocalDateTime.now()));
+        RepairNote repairNote = new RepairNote(technician, note.trim(), LocalDateTime.now());
+        store.insertNote(ticket, repairNote);
+        ticket.addNote(repairNote);
     }
 
     private void checkAssignedTo(Ticket ticket, Technician technician) throws HelpdeskException {
         if (ticket.getAssignee() == null) throw new HelpdeskException("Assign a technician first.");
-        if (ticket.getAssignee() != technician) throw new HelpdeskException("This ticket is not assigned to you.");
+        if (!ticket.getAssignee().equals(technician)) throw new HelpdeskException("This ticket is not assigned to you.");
     }
 }

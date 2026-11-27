@@ -21,5 +21,13 @@ public abstract class User {
     public abstract String getRole();
 
     @Override
+    public boolean equals(Object o) {
+        return o instanceof User && ((User) o).username.equals(username);
+    }
+
+    @Override
+    public int hashCode() { return username.hashCode(); }
+
+    @Override
     public String toString() { return fullName; }
 }

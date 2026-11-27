@@ -29,7 +29,7 @@ public class DeviceService {
         if (store.findDevice(code) != null) throw new HelpdeskException("Device code already exists: " + code.trim());
 
         Device device = new Device(code.trim().toUpperCase(), type, location.trim(), Device.WORKING);
-        store.saveDevice(device);
+        store.insertDevice(device);
         return device;
     }
 
@@ -39,6 +39,7 @@ public class DeviceService {
         if (condition == null) throw new HelpdeskException("Choose a condition.");
         device.setLocation(location.trim());
         device.setCondition(condition);
+        store.updateDevice(device);
     }
 
     public void retireDevice(Device device) throws HelpdeskException {
@@ -49,12 +50,13 @@ public class DeviceService {
             }
         }
         device.setCondition(Device.RETIRED);
+        store.updateDevice(device);
     }
 
     public List<Ticket> getRepairHistory(Device device) {
         List<Ticket> list = new ArrayList<>();
         for (Ticket t : store.getAllTickets()) {
-            if (t.getDevice() == device) list.add(t);
+            if (device.equals(t.getDevice())) list.add(t);
         }
         list.sort(Comparator.comparing(Ticket::getCreatedAt).reversed());
         return list;

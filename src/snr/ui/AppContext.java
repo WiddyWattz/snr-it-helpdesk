@@ -1,6 +1,7 @@
 package snr.ui;
 
 import snr.data.DataStore;
+import snr.model.HelpdeskException;
 import snr.service.AuthService;
 import snr.service.DeviceService;
 import snr.service.ReportService;
@@ -11,8 +12,10 @@ public class AppContext {
     private final TicketService ticketService;
     private final DeviceService deviceService;
     private final ReportService reportService;
+    private final DataStore store;
 
     public AppContext(DataStore store) {
+        this.store = store;
         authService = new AuthService(store);
         ticketService = new TicketService(store);
         deviceService = new DeviceService(store);
@@ -23,4 +26,6 @@ public class AppContext {
     public TicketService tickets() { return ticketService; }
     public DeviceService devices() { return deviceService; }
     public ReportService reports() { return reportService; }
+
+    public void reload() throws HelpdeskException { store.reload(); }
 }
