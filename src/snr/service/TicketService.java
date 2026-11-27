@@ -59,7 +59,9 @@ public class TicketService {
 
     public void assign(Ticket ticket, Technician technician) throws HelpdeskException {
         if (technician == null) throw new HelpdeskException("Choose a technician.");
-        if (ticket.getStatus() == Status.CLOSED) throw new HelpdeskException("This ticket is already closed.");
+        if (ticket.getStatus() == Status.RESOLVED || ticket.getStatus() == Status.CLOSED) {
+            throw new HelpdeskException("This ticket is already " + ticket.getStatus() + ".");
+        }
         ticket.assignTo(technician, LocalDateTime.now());
         store.updateTicket(ticket);
     }

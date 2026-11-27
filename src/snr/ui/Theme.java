@@ -41,6 +41,11 @@ public final class Theme {
         return button;
     }
 
+    public static void closeOnEscape(JDialog dialog) {
+        dialog.getRootPane().registerKeyboardAction(e -> dialog.dispose(),
+                KeyStroke.getKeyStroke("ESCAPE"), JComponent.WHEN_IN_FOCUSED_WINDOW);
+    }
+
     public static JPanel page(String title, JComponent content) {
         JPanel page = new JPanel(new BorderLayout());
         page.setBackground(BACKGROUND);

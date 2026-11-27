@@ -123,7 +123,7 @@ public class TicketsPanel extends JPanel {
         if (ticket == null) return;
         AssignDialog dialog = new AssignDialog(SwingUtilities.getWindowAncestor(this), app, ticket);
         dialog.setVisible(true);
-        if (dialog.isAssigned()) refresh();
+        refresh();
     }
 
     private void updateStatus() {
@@ -138,6 +138,7 @@ public class TicketsPanel extends JPanel {
             refresh();
             JOptionPane.showMessageDialog(this, "Ticket #" + ticket.getId() + " is now " + next + ".");
         } catch (HelpdeskException e) {
+            refresh();
             JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot update status", JOptionPane.WARNING_MESSAGE);
         }
     }

@@ -38,15 +38,15 @@ public class DataStore {
         for (Map<String, Object> r : ticketRows) {
             Ticket t = Ticket.create(Category.valueOf(str(r, "category")), num(r, "id"), str(r, "description"),
                     Priority.valueOf(str(r, "priority")), devices.get(str(r, "device_code")),
-                    (Reporter) users.get(str(r, "reporter")), Dates.fromDb(r.get("created_at")));
-            t.restore(Status.valueOf(str(r, "status")), (Technician) users.get(str(r, "assignee")),
+                    userAs(Reporter.class, str(r, "reporter")), Dates.fromDb(r.get("created_at")));
+            t.restore(Status.valueOf(str(r, "status")), userAs(Technician.class, str(r, "assignee")),
                     Dates.fromDb(r.get("assigned_at")), Dates.fromDb(r.get("resolved_at")));
             byId.put(t.getId(), t);
         }
         for (Map<String, Object> r : noteRows) {
             Ticket t = byId.get(num(r, "ticket_id"));
             if (t != null) {
-                t.addNote(new RepairNote((Technician) users.get(str(r, "technician")), str(r, "note"),
+                t.addNote(new RepairNote(userAs(Technician.class, str(r, "technician")), str(r, "note"),
                         Dates.fromDb(r.get("created_at"))));
             }
         }
@@ -77,7 +77,7 @@ public class DataStore {
         row.put("device_code", device.getCode());
         row.put("reporter", reporter.getUsername());
         row.put("created_at", Dates.toDb(createdAt));
-        int id = num(db.insert("ticket", row), "id");
+        int id = num(write(() -> db.insert("ticket", row)), "id");
 
         Ticket ticket = Ticket.create(category, id, description, priority, device, reporter, createdAt);
         tickets.add(ticket);
@@ -90,7 +90,7 @@ public class DataStore {
         changes.put("assignee", ticket.getAssignee() == null ? null : ticket.getAssignee().getUsername());
         changes.put("assigned_at", Dates.toDb(ticket.getAssignedAt()));
         changes.put("resolved_at", Dates.toDb(ticket.getResolvedAt()));
-        db.update("ticket", "id", ticket.getId(), changes);
+        write(() -> { db.update("ticket", "id", ticket.getId(), changes); return null; });
     }
 
     public void insertNote(Ticket ticket, RepairNote note) throws HelpdeskException {
@@ -99,16 +99,36 @@ public class DataStore {
         row.put("technician", note.getTechnician().getUsername());
         row.put("note", note.getNote());
         row.put("created_at", Dates.toDb(note.getDateTime()));
-        db.insert("repair_note", row);
+        write(() -> db.insert("repair_note", row));
     }
 
     public void insertDevice(Device device) throws HelpdeskException {
-        db.insert("device", deviceRow(device));
+        write(() -> db.insert("device", deviceRow(device)));
         devices.put(device.getCode(), device);
     }
 
     public void updateDevice(Device device) throws HelpdeskException {
-        db.update("device", "code", device.getCode(), deviceRow(device));
+        write(() -> { db.update("device", "code", device.getCode(), deviceRow(device)); return null; });
+    }
+
+    private interface Write<T> { T run() throws HelpdeskException; }
+
+    // If a save fails, reload so the app shows what is really in the database.
+    private <T> T write(Write<T> action) throws HelpdeskException {
+        try {
+            return action.run();
+        } catch (HelpdeskException e) {
+            try {
+                reload();
+            } catch (HelpdeskException ignored) {
+            }
+            throw e;
+        }
+    }
+
+    private <T extends User> T userAs(Class<T> type, String username) {
+        User u = users.get(username);
+        return type.isInstance(u) ? type.cast(u) : null;
     }
 
     private Map<String, Object> deviceRow(Device d) {

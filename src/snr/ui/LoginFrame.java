@@ -1,5 +1,6 @@
 package snr.ui;
 
+import snr.model.HelpdeskException;
 import snr.model.User;
 
 import javax.swing.*;
@@ -51,6 +52,12 @@ public class LoginFrame extends JFrame {
     }
 
     private void logIn() {
+        try {
+            app.reload();
+        } catch (HelpdeskException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Could not load data", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
         User user = app.auth().login(usernameField.getText(), new String(passwordField.getPassword()));
         if (user == null) {
             JOptionPane.showMessageDialog(this, "Wrong username or password.", "Log in failed",

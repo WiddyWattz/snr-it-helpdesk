@@ -12,7 +12,6 @@ public class AssignDialog extends JDialog {
     private final AppContext app;
     private final Ticket ticket;
     private final JComboBox<Technician> technicianBox;
-    private boolean assigned;
 
     public AssignDialog(Window owner, AppContext app, Ticket ticket) {
         super(owner, "Assign Ticket #" + ticket.getId(), ModalityType.APPLICATION_MODAL);
@@ -56,11 +55,10 @@ public class AssignDialog extends JDialog {
         add(content, BorderLayout.CENTER);
         add(buttons, BorderLayout.SOUTH);
         getRootPane().setDefaultButton(assign);
+        Theme.closeOnEscape(this);
         setSize(420, 300);
         setLocationRelativeTo(owner);
     }
-
-    public boolean isAssigned() { return assigned; }
 
     private JLabel label(String text) {
         JLabel label = new JLabel(text);
@@ -72,7 +70,6 @@ public class AssignDialog extends JDialog {
         Technician technician = (Technician) technicianBox.getSelectedItem();
         try {
             app.tickets().assign(ticket, technician);
-            assigned = true;
             JOptionPane.showMessageDialog(this, "Ticket #" + ticket.getId() + " assigned to "
                     + technician.getFullName() + ".");
             dispose();

@@ -67,12 +67,19 @@ public class SupabaseClient {
         return b;
     }
 
+    private static String errorMessage(String body) {
+        try {
+            Object message = ((Map<?, ?>) Json.parse(body)).get("message");
+            if (message != null) return message.toString();
+        } catch (RuntimeException ignored) {
+        }
+        return body;
+    }
+
     private Object send(HttpRequest.Builder builder) throws HelpdeskException {
         try {
             HttpResponse<String> res = http.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-            if (res.statusCode() >= 300) {
-                throw new HelpdeskException("Database error (" + res.statusCode() + "): " + res.body());
-            }
+            if (res.statusCode() >= 300) throw new HelpdeskException("Database error: " + errorMessage(res.body()));
             return res.body().isBlank() ? null : Json.parse(res.body());
         } catch (IOException e) {
             throw new HelpdeskException("Cannot reach Supabase. Check your internet connection.");

@@ -86,6 +86,7 @@ public class DevicesPanel extends JPanel {
             refresh();
             JOptionPane.showMessageDialog(this, "Device " + d.getCode() + " added.");
         } catch (HelpdeskException e) {
+            refresh();
             JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot add device", JOptionPane.WARNING_MESSAGE);
         }
     }
@@ -104,6 +105,7 @@ public class DevicesPanel extends JPanel {
             app.devices().updateDevice(device, location.getText(), (String) condition.getSelectedItem());
             refresh();
         } catch (HelpdeskException e) {
+            refresh();
             JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot edit device", JOptionPane.WARNING_MESSAGE);
         }
     }
@@ -117,6 +119,7 @@ public class DevicesPanel extends JPanel {
             app.devices().retireDevice(device);
             refresh();
         } catch (HelpdeskException e) {
+            refresh();
             JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot retire device", JOptionPane.WARNING_MESSAGE);
         }
     }
@@ -127,7 +130,14 @@ public class DevicesPanel extends JPanel {
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Repair History",
                 Dialog.ModalityType.APPLICATION_MODAL);
         dialog.add(new TicketsPanel(app, user, "Repair History: " + device,
-                () -> app.devices().getRepairHistory(device), TicketsPanel.Mode.VIEW));
+                () -> app.devices().getRepairHistory(device), TicketsPanel.Mode.VIEW), BorderLayout.CENTER);
+        JButton close = Theme.primaryButton("Close");
+        close.addActionListener(e -> dialog.dispose());
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 24, 12));
+        bottom.setBackground(Theme.BACKGROUND);
+        bottom.add(close);
+        dialog.add(bottom, BorderLayout.SOUTH);
+        Theme.closeOnEscape(dialog);
         dialog.setSize(900, 450);
         dialog.setLocationRelativeTo(this);
         dialog.setVisible(true);

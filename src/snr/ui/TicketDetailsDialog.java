@@ -57,6 +57,7 @@ public class TicketDetailsDialog extends JDialog {
         setLayout(new BorderLayout());
         add(content, BorderLayout.CENTER);
         add(bottom, BorderLayout.SOUTH);
+        Theme.closeOnEscape(this);
         setSize(480, 550);
         setLocationRelativeTo(owner);
     }
